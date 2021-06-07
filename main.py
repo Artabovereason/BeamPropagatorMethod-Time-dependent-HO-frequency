@@ -73,7 +73,7 @@ y       = np.zeros(n)
 z       = 0.000001                                     #initial slope to calculate Psi
 y[1]    = z*h
 
-ntp     = 3 #nombre periode
+ntp     = 50 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -339,10 +339,11 @@ for i in range(len(t_val)):
         angle_real.append(  math.degrees(np.arctan(C1_val[i].real / C1_val[i].imag)) )
 """
 '''=========================================================================='''
+
 sigma_width = []
 for i in range(len(t_val)):
     sigma_width.append(1/max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
-
+"""
 plt.figure()
 plt.title('Representation of width $\sigma$ of the gaussian through time')
 plt.xlabel('<----$t$---->')
@@ -352,49 +353,99 @@ plt.legend()
 plt.plot(t_val, sigma_width , color='black' , label ='width' ) #
 plt.plot(t_val, abs(C1_val ), color='blue'  , label ='normalisation'  )     #
 plt.show()
-
-
-"""
 """
 
-sigma_width_time = [] # largeur de la gaussienne en x=0 au cours du temps
-for i in range(len(t_val)):
-    sigma_width_time.append(sigma_width[i])
+"""
+scipy.integrate.simps(y, x=None, dx=1)
+
+h : step in space
+k : step in time
+"""
 
 
 def function(x): # définition de la fonction à intégré dans la phase de berry
-    for i in range(len(t_val)):
-        x[i]= 1/(x[i]**2)
-    return x
+    for i in range(len(x)):
+        x[i]= -x[i]**2
+        #print(x[i])
+    return np.reciprocal(x)
 
-# using Simpson's rule:
-area = simps(function(sigma_width_time),sigma_width_time)
+"""
+berry_phase   = [] # array dans lequel je stock les phases de berry en fonction du temps
+valeur_valeur =[]
+for m in range(len(t_val)):
+    valeur_valeur.append(sigma_width[m])
+    valeur_integration = 0
+    valeur_integration = simps( function(valeur_valeur) , valeur_valeur , dx=k )
+    berry_phase.append(math.degrees(valeur_integration/2.0) % 360 ) #modulo 360 pour avoir bien un angle entre [0,2pi[
+    #print(valeur_integration)
 
-berry_phase = 0
-berry_phase = math.degrees(-area/2)/ntp
-print ('La phase de berry par itération de période est def (en deg) : ', berry_phase )
+ # largeur de la gaussienne en x=0 au cours du temps
+print(berry_phase)
 
 
+plt.figure()
+plt.title('Berry phase')
+plt.xlabel('<----$t$---->')
+plt.ylabel('Berry')
+plt.xlim(0,len(t_val)*k)
+plt.plot(t_val, berry_phase,'ro', color='blue'  , label =' '  )     #
+plt.legend()
+plt.show()
+"""
 
+
+valeur_valeur =[]
+berry_phase   = []
+for m in range(len(t_val)):
+    valeur_valeur.append(sigma_width[m])
+for w in range(len(t_val)):
+    if w==0: berry_phase.append(0)
+    else :
+        berry_phase.append(simps( function(valeur_valeur[:w]) , valeur_valeur[:w] , dx=k ) )
+
+
+"""
+plt.figure()
+plt.title('Berry phase')
+plt.xlabel('<----$t$---->')
+plt.ylabel('Berry')
+plt.xlim(0,len(t_val)*k)
+plt.plot(t_val, berry_phase,'ro', color='blue'  , label =' '  )     #
+plt.legend()
+plt.show()
+
+print(berry_phase)
+"""
+
+plt.rcParams["figure.figsize"] = (10,10)
 filenames = []
 for k in range(len(t_val)):
     # plot the line chart
-    fig, axs = plt.subplots(2)
+    fig, axs = plt.subplots(2,2)
+    """
     #axs[0].title('Numerical solution of harmonic oscillator potential at $t=$ %.3f' %t_val[k])
-    axs[0].set_title('Time-dependent frequency quantum harmonic oscillator at $t=$%.3f' %t_val[k])
-    axs[0].set_ylabel(' ')
-    axs[0].set_xlabel('space $x$')
-    axs[0].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
-    axs[0].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction')
-    axs[0].set_ylim(-0.5,2.5)
-    axs[0].legend(loc="upper right")
+    axs[0,0].set_title('Time-dependent frequency quantum harmonic oscillator at $t=$%.3f' %t_val[k])
+    axs[0,0].set_ylabel(' ')
+    axs[0,0].set_xlabel('space $x$')
+    axs[0,0].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
+    axs[0,0].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction')
+    axs[0,0].set_ylim(-0.5,2.5)
+    axs[0,0].legend(loc="upper right")
 
-    axs[1].set_title('Width of the Gaussian function')
-    axs[1].set_ylabel(' ')
-    axs[1].set_xlabel('time $t$')
-    axs[1].plot(t_val   , sigma_width         , color='blue'    , label ='width' ) #
-    axs[1].plot(t_val[k], sigma_width[k] ,'ro', color='green'   , label ='instantaneous width' ) #
-    axs[1].legend(loc="upper right")
+    axs[0,1].set_title('Width of the Gaussian function')
+    axs[0,1].set_ylabel(' ')
+    axs[0,1].set_xlabel('time $t$')
+    axs[0,1].plot(t_val   , sigma_width         , color='blue'    , label ='width' ) #
+    axs[0,1].plot(t_val[k], sigma_width[k] ,'ro', color='red'   , label ='instantaneous width' ) #
+    axs[0,1].legend(loc="upper right")
+"""
+    axs[1,0].set_title('Berry phase')
+    axs[1,0].set_ylabel(' ')
+    axs[1,0].set_xlabel('time $t$')
+    axs[1,0].plot(t_val   , berry_phase   , color='blue'  , label ='phase'  )
+    axs[1,0].plot(t_val[k], berry_phase[k] ,'ro', color='red' , label ='instantaneous' ) #
+    axs[1,0].legend(loc="upper right")
+
 
     plt.subplots_adjust(left=0.1,
                     bottom=0.1,
@@ -421,6 +472,9 @@ for filename in set(filenames):
 
 end = time.clock()
 print('time taken to run the full program is ',end-start,' seconds')
+
+
+
 
 """
 filenames = []
