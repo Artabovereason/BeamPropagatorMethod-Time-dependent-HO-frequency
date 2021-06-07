@@ -73,7 +73,7 @@ y       = np.zeros(n)
 z       = 0.000001                                     #initial slope to calculate Psi
 y[1]    = z*h
 
-ntp     = 50 #nombre periode
+ntp     = 30 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -301,19 +301,7 @@ print('c(1) values are = ' ,C1_val)
 end = time.clock()
 print('time taken to run the program is ',end-start,' seconds')
 '''=========================================================================='''
-"""
-for k in range(len(PSI_t)):
-	plt.figure()
-	plt.title('Numerical solution of harmonic oscillator potential at $t=$ %.3f' %k)
-	plt.xlabel('<----$x$---->')
-	plt.xlim(-2,2)
-	plt.ylabel('$V(x)$ and $\psi(x)$ at $t=$ %.3f'%k)
-	#plt.ylim(-0.1,2.5)
-	plt.plot(x,[V(i,k) for i in x], color='black' , label = 'potential') #potential
-	plt.plot(x,PSI_t[t_val[k]]    , color='red'   , label = 'wavefunction')     # wave function
-	plt.legend()
-	plt.show()
-"""
+
 """
 plt.figure()
 plt.title('omega = %.3f' %omega)
@@ -327,22 +315,9 @@ else:
         plt.plot(t_val,C2_val)
 plt.show()
 """
-"""
-angle_complex = []
-angle_real = []
-for i in range(len(t_val)):
-    if C1_val[i].imag==0 :
-        angle_complex.append(np.arctan(1E40))
-        angle_real.append(math.degrees(np.arctan(1E40)))
-    else:
-        angle_complex.append(np.arctan(C1_val[i].real / C1_val[i].imag))
-        angle_real.append(  math.degrees(np.arctan(C1_val[i].real / C1_val[i].imag)) )
-"""
+
 '''=========================================================================='''
 
-sigma_width = []
-for i in range(len(t_val)):
-    sigma_width.append(1/max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
 """
 plt.figure()
 plt.title('Representation of width $\sigma$ of the gaussian through time')
@@ -355,44 +330,18 @@ plt.plot(t_val, abs(C1_val ), color='blue'  , label ='normalisation'  )     #
 plt.show()
 """
 
-"""
-scipy.integrate.simps(y, x=None, dx=1)
+'''=========================================================================='''
 
-h : step in space
-k : step in time
-"""
 
+sigma_width = []
+for i in range(len(t_val)):
+    sigma_width.append(1/max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
 
 def function(x): # définition de la fonction à intégré dans la phase de berry
     for i in range(len(x)):
         x[i]= -x[i]**2
         #print(x[i])
     return np.reciprocal(x)
-
-"""
-berry_phase   = [] # array dans lequel je stock les phases de berry en fonction du temps
-valeur_valeur =[]
-for m in range(len(t_val)):
-    valeur_valeur.append(sigma_width[m])
-    valeur_integration = 0
-    valeur_integration = simps( function(valeur_valeur) , valeur_valeur , dx=k )
-    berry_phase.append(math.degrees(valeur_integration/2.0) % 360 ) #modulo 360 pour avoir bien un angle entre [0,2pi[
-    #print(valeur_integration)
-
- # largeur de la gaussienne en x=0 au cours du temps
-print(berry_phase)
-
-
-plt.figure()
-plt.title('Berry phase')
-plt.xlabel('<----$t$---->')
-plt.ylabel('Berry')
-plt.xlim(0,len(t_val)*k)
-plt.plot(t_val, berry_phase,'ro', color='blue'  , label =' '  )     #
-plt.legend()
-plt.show()
-"""
-
 
 valeur_valeur =[]
 berry_phase   = []
@@ -403,27 +352,36 @@ for w in range(len(t_val)):
     else :
         berry_phase.append(simps( function(valeur_valeur[:w]) , valeur_valeur[:w] , dx=k ) )
 
+derivee_sigma = []
+for i in range(1,len(t_val)-1):
+    derivee_sigma.append(  (sigma_width[i-1]- sigma_width[i+1])/(2*k) )
 
+rapport_sigma = []
+for i in range(1,len(t_val)-1):
+    rapport_sigma.append( derivee_sigma[i-1]/(2*sigma_width[i]) )
 """
 plt.figure()
-plt.title('Berry phase')
+plt.title('Representation of width $\sigma$ of the gaussian through time')
 plt.xlabel('<----$t$---->')
-plt.ylabel('Berry')
-plt.xlim(0,len(t_val)*k)
-plt.plot(t_val, berry_phase,'ro', color='blue'  , label =' '  )     #
+plt.ylabel('$\sigma$')
+#plt.ylim(-105,+105)
 plt.legend()
+plt.plot(t_val                , sigma_width  , color='blue'   , label ='$\sigma$' )
+plt.plot(t_val[1:len(t_val)-1],derivee_sigma , color='red'    , label ='$\dot{\sigma}$'  )     #
+plt.plot(t_val[1:len(t_val)-1],rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )     #
 plt.show()
-
-print(berry_phase)
 """
+dimension_periode = np.linspace(0, max(t_val), ntp )
+zeros = []
+for i in range(len(dimension_periode)):
+    zeros.append(0)
 
-plt.rcParams["figure.figsize"] = (10,10)
+plt.rcParams["figure.figsize"] = (10,10) #taille de mon image
 filenames = []
 for k in range(len(t_val)):
     # plot the line chart
     fig, axs = plt.subplots(2,2)
-    """
-    #axs[0].title('Numerical solution of harmonic oscillator potential at $t=$ %.3f' %t_val[k])
+
     axs[0,0].set_title('Time-dependent frequency quantum harmonic oscillator at $t=$%.3f' %t_val[k])
     axs[0,0].set_ylabel(' ')
     axs[0,0].set_xlabel('space $x$')
@@ -437,8 +395,9 @@ for k in range(len(t_val)):
     axs[0,1].set_xlabel('time $t$')
     axs[0,1].plot(t_val   , sigma_width         , color='blue'    , label ='width' ) #
     axs[0,1].plot(t_val[k], sigma_width[k] ,'ro', color='red'   , label ='instantaneous width' ) #
+#    axs[0,1].plot(t_val[1:len(t_val)-1], rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )
     axs[0,1].legend(loc="upper right")
-"""
+
     axs[1,0].set_title('Berry phase')
     axs[1,0].set_ylabel(' ')
     axs[1,0].set_xlabel('time $t$')
@@ -446,13 +405,29 @@ for k in range(len(t_val)):
     axs[1,0].plot(t_val[k], berry_phase[k] ,'ro', color='red' , label ='instantaneous' ) #
     axs[1,0].legend(loc="upper right")
 
+    axs[1,1].set_title('alpha of the Gaussian function')
+    axs[1,1].set_ylabel(' ')
+    axs[1,1].set_xlabel('time $t$')
+    axs[1,1].plot(t_val[1:len(t_val)-1], rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )
 
-    plt.subplots_adjust(left=0.1,
-                    bottom=0.1,
-                    right=0.9,
-                    top=0.9,
-                    wspace=0.4,
-                    hspace=0.7)
+    axs[1,1].plot(dimension_periode, zeros ,'ro', color='black'   , label ='instantaneous' ) #
+
+    axs[1,0].plot(dimension_periode, zeros ,'ro', color='black'   , label ='instantaneous' ) #
+
+    if k==0 or k>len(t_val)-2:
+        print('')
+    else: axs[1,1].plot(t_val[k], rapport_sigma[k-1] ,'ro', color='red'   , label ='instantaneous' ) #
+
+
+    axs[1,1].legend(loc="upper right")
+    plt.subplots_adjust(
+                        left=0.1,
+                        bottom=0.1,
+                        right=0.9,
+                        top=0.9,
+                        wspace=0.4,
+                        hspace=0.7
+                        )
 
     filename = f'{k}.png'
     filenames.append(filename)
@@ -472,70 +447,3 @@ for filename in set(filenames):
 
 end = time.clock()
 print('time taken to run the full program is ',end-start,' seconds')
-
-
-
-
-"""
-filenames = []
-for k in range(len(t_val)):
-    # plot the line chart
-
-    plt.title('Numerical solution of harmonic oscillator potential at $t=$ %.3f' %t_val[k])
-    plt.plot(x,[V(i,k) for i in x]             , color='black' )
-    plt.plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   )
-    partie_reel = []
-    partie_reel = PSI_t[t_val[k]]
-    partie_imag = []
-    partie_imag = PSI_t[t_val[k]]
-    for o in range( len(PSI_t[t_val[k]]) ):
-        partie_reel[o]= partie_reel[o].real
-        partie_imag[o]= partie_imag[o].imag
-
-    #plt.plot(x, partie_reel , color='blue'   )
-    #plt.plot(x, partie_imag , color='green'   )
-    plt.ylim(-2.5,2.5)
-    # create file name and append it to a list
-    filename = f'{k}.png'
-    filenames.append(filename)
-
-    # save frame
-    plt.savefig(filename)
-    plt.close()
-# build gif
-with imageio.get_writer('mygif.gif', mode='I') as writer:
-    for filename in filenames:
-        image = imageio.imread(filename)
-        writer.append_data(image)
-
-# Remove files
-for filename in set(filenames):
-    os.remove(filename)
-"""
-
-"""
-plt.figure()
-plt.title('Representation of the phase angle through time')
-plt.xlabel('<----$t$---->')
-#plt.xlim(-2,2)
-plt.ylabel('$theta$')
-plt.ylim(-105,+105)
-plt.plot(t_val,angle_real , color='black' ) #potential
-plt.plot(t_val,abs(C1_val ) , color='blue' )
-#plt.plot(x,PSI_t[t_val[0]]    , color='red'   )     # wave function
-plt.show()
-"""
-
-
-
-"""
-plt.figure()
-#plt.title('Numerical solution of harmonic oscillator potential at $t=$ %.3f' %k)
-#plt.xlabel('<----$x$---->')
-#plt.xlim(-2,2)
-#lt.ylabel('$V(x)$ and $\psi(x)$ at $t=$ %.3f'%k)
-plt.ylim(-1.5,2.5)
-plt.plot(x,[V(i,0) for i in x], color='black' ) #potential
-#plt.plot(x,PSI_t[t_val[0]]    , color='red'   )     # wave function
-plt.show()
-"""
