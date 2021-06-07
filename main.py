@@ -3,6 +3,9 @@ import time
 import matplotlib.pyplot as plt
 import os
 import imageio
+import math
+from scipy.integrate import simps
+from numpy import trapz
 
 start = time.clock()
 
@@ -70,7 +73,7 @@ y       = np.zeros(n)
 z       = 0.000001                                     #initial slope to calculate Psi
 y[1]    = z*h
 
-ntp     = 2 #nombre periode
+ntp     = 1 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -95,13 +98,9 @@ gamma   = 0.25          #gamma value for the potential 0.025
 def V(x,t):
     '''takes in the x coordinate and time
        returns the time dependent potential'''
-
-
     #b = np.cos(omega*t)*(x**2)
     #b = -((2*epsilon)/dist**2)*(x**2)+(epsilon/(dist**4))*(x**4) + gamma*np.cos(omega*t)*(x**3)
-    b = (((2*epsilon)/dist**2)+gamma*np.cos(omega*t))*(x**2)
-
-
+    b = (2+np.cos(omega*t))*(x**2)/2
     return b
 
 '''=========================================================================='''
@@ -155,7 +154,7 @@ Psi_gs = {}
 for t in t_val:
     Eigenvalue = Eigen()[0]
     Psi_gs[t] = Psi(Eigenvalue)[1]
-    print('Psi_ground_state at t = ',t,' generated with eigenvalue = ',Eigenvalue)
+    #print('Psi_ground_state at t = ',t,' generated with eigenvalue = ',Eigenvalue)
 print('All Psi_gs generated')
 
 '''=========================================================================='''
@@ -245,7 +244,7 @@ PSI_t           = {}                   #stores the Psi at each time
 PSI_t[t_val[0]] = Psi_0      #set the initial Psi here
 Psi             = PSI_t[t_val[0]]
 for t in range(1,len(t_val)):
-    print('Psi(at t = %f) generated' %t)
+    #print('Psi(at t = %f) generated' %t)
     bv    = []
     b_val = B_val[t_val[t-1]]
     l_val = L_val[t_val[t]]
@@ -273,7 +272,6 @@ for t in range(1,len(t_val)):
     PSI_t[t_val[t]] = npsi
     Psi = npsi
 '''=========================================================================='''
-'''=========================================================================='''
 Coeff = {}                  #saves coefficients(c) for each time step
 def C(Psi,yn):
     '''returns the coefficient cn of Psi in yn'''
@@ -292,8 +290,14 @@ for i in t_val:
 
 
 '''=========================================================================='''
+
+C1_val = np.array([i for i in Coeff.values()] )
 C2_val = np.array([i for i in Coeff2.values()])
-print('c(1)2 values are = ',C2_val)
+"""
+@('c(1)2 values are = ',C2_val)
+print('c(1) values are = ' ,C1_val)
+"""
+
 end = time.clock()
 print('time taken to run the program is ',end-start,' seconds')
 '''=========================================================================='''
@@ -323,10 +327,92 @@ else:
         plt.plot(t_val,C2_val)
 plt.show()
 """
+"""
+angle_complex = []
+angle_real = []
+for i in range(len(t_val)):
+    if C1_val[i].imag==0 :
+        angle_complex.append(np.arctan(1E40))
+        angle_real.append(math.degrees(np.arctan(1E40)))
+    else:
+        angle_complex.append(np.arctan(C1_val[i].real / C1_val[i].imag))
+        angle_real.append(  math.degrees(np.arctan(C1_val[i].real / C1_val[i].imag)) )
+"""
+'''=========================================================================='''
+sigma_width = []
+for i in range(len(t_val)):
+    sigma_width.append(max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
+
+plt.figure()
+plt.title('Representation of width $\sigma$ of the gaussian through time')
+plt.xlabel('<----$t$---->')
+plt.ylabel('$\sigma$')
+#plt.ylim(-105,+105)
+plt.legend()
+plt.plot(t_val, sigma_width , color='black' , label ='width' ) #
+plt.plot(t_val, abs(C1_val ), color='blue'  , label ='normalisation'  )     #
+plt.show()
+
+
+"""
+"""
+
+sigma_width_time = [] # largeur de la gaussienne en x=0 au cours du temps
+for i in range(len(t_val)):
+    sigma_width_time.append(sigma_width[i])
+
+
+def function(x): # définition de la fonction à intégré dans la phase de berry
+    for i in range(len(t_val)):
+        x[i]= 1/(x[i]**2)
+    return x
+
+# using Simpson's rule:
+area = simps(function(sigma_width_time),sigma_width_time)
+
+berry_phase = 0
+berry_phase = math.degrees(-area/2)/ntp
+print ('La phase de berry par itération de période est def (en deg) : ', berry_phase )
+
+
 
 filenames = []
 for k in range(len(t_val)):
     # plot the line chart
+    fig, axs = plt.subplots(2)
+    #axs[0].title('Numerical solution of harmonic oscillator potential at $t=$ %.3f' %t_val[k])
+    axs[0].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
+    axs[0].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction')
+    axs[0].set_ylim(-0.5,2.5)
+    axs[0].legend(loc="upper right")
+
+    axs[1].plot(t_val   , sigma_width         , color='blue'    , label ='width' ) #
+    axs[1].plot(t_val[k], sigma_width[k] ,'ro', color='green'   , label ='instantaneous width' ) #
+    axs[1].legend(loc="upper right")
+    filename = f'{k}.png'
+    filenames.append(filename)
+
+    # save frame
+    plt.savefig(filename)
+    plt.close()
+# build gif
+with imageio.get_writer('mygif.gif', mode='I') as writer:
+    for filename in filenames:
+        image = imageio.imread(filename)
+        writer.append_data(image)
+
+# Remove files
+for filename in set(filenames):
+    os.remove(filename)
+
+end = time.clock()
+print('time taken to run the full program is ',end-start,' seconds')
+
+"""
+filenames = []
+for k in range(len(t_val)):
+    # plot the line chart
+
     plt.title('Numerical solution of harmonic oscillator potential at $t=$ %.3f' %t_val[k])
     plt.plot(x,[V(i,k) for i in x]             , color='black' )
     plt.plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   )
@@ -338,8 +424,8 @@ for k in range(len(t_val)):
         partie_reel[o]= partie_reel[o].real
         partie_imag[o]= partie_imag[o].imag
 
-    plt.plot(x, partie_reel , color='blue'   )
-    plt.plot(x, partie_imag , color='green'   )
+    #plt.plot(x, partie_reel , color='blue'   )
+    #plt.plot(x, partie_imag , color='green'   )
     plt.ylim(-2.5,2.5)
     # create file name and append it to a list
     filename = f'{k}.png'
@@ -357,11 +443,20 @@ with imageio.get_writer('mygif.gif', mode='I') as writer:
 # Remove files
 for filename in set(filenames):
     os.remove(filename)
+"""
 
-
-
-
-
+"""
+plt.figure()
+plt.title('Representation of the phase angle through time')
+plt.xlabel('<----$t$---->')
+#plt.xlim(-2,2)
+plt.ylabel('$theta$')
+plt.ylim(-105,+105)
+plt.plot(t_val,angle_real , color='black' ) #potential
+plt.plot(t_val,abs(C1_val ) , color='blue' )
+#plt.plot(x,PSI_t[t_val[0]]    , color='red'   )     # wave function
+plt.show()
+"""
 
 
 
