@@ -73,7 +73,7 @@ y       = np.zeros(n)
 z       = 0.000001                                     #initial slope to calculate Psi
 y[1]    = z*h
 
-ntp     = 1 #nombre periode
+ntp     = 3 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -341,7 +341,7 @@ for i in range(len(t_val)):
 '''=========================================================================='''
 sigma_width = []
 for i in range(len(t_val)):
-    sigma_width.append(max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
+    sigma_width.append(1/max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
 
 plt.figure()
 plt.title('Representation of width $\sigma$ of the gaussian through time')
@@ -381,14 +381,28 @@ for k in range(len(t_val)):
     # plot the line chart
     fig, axs = plt.subplots(2)
     #axs[0].title('Numerical solution of harmonic oscillator potential at $t=$ %.3f' %t_val[k])
+    axs[0].set_title('Time-dependent frequency quantum harmonic oscillator at $t=$%.3f' %t_val[k])
+    axs[0].set_ylabel(' ')
+    axs[0].set_xlabel('space $x$')
     axs[0].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
     axs[0].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction')
     axs[0].set_ylim(-0.5,2.5)
     axs[0].legend(loc="upper right")
 
+    axs[1].set_title('Width of the Gaussian function')
+    axs[1].set_ylabel(' ')
+    axs[1].set_xlabel('time $t$')
     axs[1].plot(t_val   , sigma_width         , color='blue'    , label ='width' ) #
     axs[1].plot(t_val[k], sigma_width[k] ,'ro', color='green'   , label ='instantaneous width' ) #
     axs[1].legend(loc="upper right")
+
+    plt.subplots_adjust(left=0.1,
+                    bottom=0.1,
+                    right=0.9,
+                    top=0.9,
+                    wspace=0.4,
+                    hspace=0.7)
+
     filename = f'{k}.png'
     filenames.append(filename)
 
