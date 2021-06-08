@@ -73,7 +73,7 @@ y       = np.zeros(n)
 z       = 0.000001                                     #initial slope to calculate Psi
 y[1]    = z*h
 
-ntp     = 30 #nombre periode
+ntp     = 5 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -343,7 +343,7 @@ def function(x): # définition de la fonction à intégré dans la phase de berr
         #print(x[i])
     return np.reciprocal(x)
 
-valeur_valeur =[]
+valeur_valeur = []
 berry_phase   = []
 for m in range(len(t_val)):
     valeur_valeur.append(sigma_width[m])
@@ -352,13 +352,21 @@ for w in range(len(t_val)):
     else :
         berry_phase.append(simps( function(valeur_valeur[:w]) , valeur_valeur[:w] , dx=k ) )
 
-derivee_sigma = []
+derivee_sigma = [] # je calcul la dérivée du width : sigma
 for i in range(1,len(t_val)-1):
     derivee_sigma.append(  (sigma_width[i-1]- sigma_width[i+1])/(2*k) )
 
-rapport_sigma = []
+rapport_sigma = [] #je fait le rapport dérivée sigma / 2*sigma pour obtenir le coefficient alpha
 for i in range(1,len(t_val)-1):
     rapport_sigma.append( derivee_sigma[i-1]/(2*sigma_width[i]) )
+
+autre_derivee = []
+for i in range(1,len(t_val)-1):
+    autre_derivee.append( 0.5 *  ( np.log(sigma_width[i-1])- np.log(sigma_width[i+1]))/(2*k)     )
+
+
+
+
 """
 plt.figure()
 plt.title('Representation of width $\sigma$ of the gaussian through time')
@@ -371,17 +379,27 @@ plt.plot(t_val[1:len(t_val)-1],derivee_sigma , color='red'    , label ='$\dot{\s
 plt.plot(t_val[1:len(t_val)-1],rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )     #
 plt.show()
 """
+
+'''=========================================================================='''
 dimension_periode = np.linspace(0, max(t_val), ntp )
 zeros = []
 for i in range(len(dimension_periode)):
     zeros.append(0)
+
+'''=========================================================================='''
+le_potentiel = [] #ça permet de tracé l'évolution du potentiel en fonction du temps
+
+for i in range(len(t_val)):
+    le_potentiel.append(V(1,i))
+'''=========================================================================='''
+
 
 plt.rcParams["figure.figsize"] = (10,10) #taille de mon image
 filenames = []
 for k in range(len(t_val)):
     # plot the line chart
     fig, axs = plt.subplots(2,2)
-
+    st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize="x-large")
     axs[0,0].set_title('Time-dependent frequency quantum harmonic oscillator at $t=$%.3f' %t_val[k])
     axs[0,0].set_ylabel(' ')
     axs[0,0].set_xlabel('space $x$')
@@ -399,8 +417,8 @@ for k in range(len(t_val)):
     axs[0,1].legend(loc="upper right")
 
     axs[1,0].set_title('Berry phase')
-    axs[1,0].set_ylabel(' ')
-    axs[1,0].set_xlabel('time $t$')
+    axs[1,0].set_ylabel('$\gamma(t)$ in degrees')
+    axs[1,0].set_xlabel('time $t$ in s')
     axs[1,0].plot(t_val   , berry_phase   , color='blue'  , label ='phase'  )
     axs[1,0].plot(t_val[k], berry_phase[k] ,'ro', color='red' , label ='instantaneous' ) #
     axs[1,0].legend(loc="upper right")
@@ -408,11 +426,12 @@ for k in range(len(t_val)):
     axs[1,1].set_title('alpha of the Gaussian function')
     axs[1,1].set_ylabel(' ')
     axs[1,1].set_xlabel('time $t$')
-    axs[1,1].plot(t_val[1:len(t_val)-1], rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )
-
-    axs[1,1].plot(dimension_periode, zeros ,'ro', color='black'   , label ='instantaneous' ) #
-
-    axs[1,0].plot(dimension_periode, zeros ,'ro', color='black'   , label ='instantaneous' ) #
+    axs[1,1].plot(t_val[1:len(t_val)-1], rapport_sigma, color='green'  , label ='$alpha(t)$'  )##########
+    axs[1,1].plot(t_val[1:len(t_val)-1], autre_derivee, color='black'  , label ='$alpha(t)$'  )##########
+    axs[1,1].plot(t_val   , le_potentiel   , color='blue'    , label ='$V(x,t)$' ) #############
+    #axs[1,1].plot(t_val[1:len(t_val)-1], rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )
+    #axs[1,1].plot(dimension_periode, zeros ,'ro', color='black'   , label ='instantaneous' ) #
+    #axs[1,0].plot(dimension_periode, zeros ,'ro', color='black'   , label ='instantaneous' ) #
 
     if k==0 or k>len(t_val)-2:
         print('')
