@@ -62,7 +62,7 @@ Some arrays are also defined here:
 """
 
 h       = 0.01                                              #step size in x coordinate
-k       = 0.1                                               #step size in t coordinate
+k       = 0.05                                               #step size in t coordinate
 x_range = (-4,4)
 n       = int((x_range[1]- x_range[0])/h)+1                           #no. of x points
 lam     = (1j*k)/(4*(h**2))                        #lambda value of L and U matrices
@@ -73,7 +73,7 @@ y       = np.zeros(n)
 z       = 0.000001                                     #initial slope to calculate Psi
 y[1]    = z*h
 
-ntp     = 5 #nombre periode
+ntp     = 3 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -337,16 +337,14 @@ sigma_width = []
 for i in range(len(t_val)):
     sigma_width.append(1/max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
 
-def function(x): # définition de la fonction à intégré dans la phase de berry
-    for i in range(len(x)):
-        x[i]= -x[i]**2
-        #print(x[i])
-    return np.reciprocal(x)
+def function(x):
+    return [-1/ ((i) ** 2) for i in x]
 
 valeur_valeur = []
 berry_phase   = []
 for m in range(len(t_val)):
     valeur_valeur.append(sigma_width[m])
+
 for w in range(len(t_val)):
     if w==0: berry_phase.append(0)
     else :
@@ -363,7 +361,6 @@ for i in range(1,len(t_val)-1):
 autre_derivee = []
 for i in range(1,len(t_val)-1):
     autre_derivee.append( 0.5 *  ( np.log(sigma_width[i-1])- np.log(sigma_width[i+1]))/(2*k)     )
-
 
 
 
@@ -413,14 +410,14 @@ for k in range(len(t_val)):
     axs[0,1].set_xlabel('time $t$')
     axs[0,1].plot(t_val   , sigma_width         , color='blue'    , label ='width' ) #
     axs[0,1].plot(t_val[k], sigma_width[k] ,'ro', color='red'   , label ='instantaneous width' ) #
-#    axs[0,1].plot(t_val[1:len(t_val)-1], rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )
+    #axs[0,1].plot(t_val[1:len(t_val)-1], rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )
     axs[0,1].legend(loc="upper right")
 
     axs[1,0].set_title('Berry phase')
     axs[1,0].set_ylabel('$\gamma(t)$ in degrees')
     axs[1,0].set_xlabel('time $t$ in s')
-    axs[1,0].plot(t_val   , berry_phase   , color='blue'  , label ='phase'  )
-    axs[1,0].plot(t_val[k], berry_phase[k] ,'ro', color='red' , label ='instantaneous' ) #
+    axs[1,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
+    axs[1,0].plot(t_val[k], berry_phase[k] ,'ro', color='red'  , label ='instantaneous' ) #
     axs[1,0].legend(loc="upper right")
 
     axs[1,1].set_title('alpha of the Gaussian function')
