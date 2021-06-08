@@ -73,7 +73,7 @@ y       = np.zeros(n)
 z       = 0.000001                                     #initial slope to calculate Psi
 y[1]    = z*h
 
-ntp     = 3 #nombre periode
+ntp     = 100 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -348,7 +348,8 @@ for m in range(len(t_val)):
 for w in range(len(t_val)):
     if w==0: berry_phase.append(0)
     else :
-        berry_phase.append(simps( function(valeur_valeur[:w]) , valeur_valeur[:w] , dx=k ) )
+        #berry_phase.append(simps( function(valeur_valeur[:w]) , valeur_valeur[:w] , dx=k ) )
+        berry_phase.append(simps( function(valeur_valeur[:w]) , t_val[:w] , dx=k ) )
 
 derivee_sigma = [] # je calcul la dérivée du width : sigma
 for i in range(1,len(t_val)-1):
@@ -391,6 +392,12 @@ for i in range(len(t_val)):
 '''=========================================================================='''
 
 
+Omega_invar = []
+for i in range(1,len(t_val)-1):
+    Omega_invar.append( sigma_width[i]* (berry_phase[i-1]-berry_phase[i+1])/(2*k) )
+
+
+
 plt.rcParams["figure.figsize"] = (10,10) #taille de mon image
 filenames = []
 for k in range(len(t_val)):
@@ -418,6 +425,7 @@ for k in range(len(t_val)):
     axs[1,0].set_xlabel('time $t$ in s')
     axs[1,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
     axs[1,0].plot(t_val[k], berry_phase[k] ,'ro', color='red'  , label ='instantaneous' ) #
+    axs[1,0].plot(t_val[1:len(t_val)-1], Omega_invar, color='black'  , label ='$\Omega$'  )
     axs[1,0].legend(loc="upper right")
 
     axs[1,1].set_title('alpha of the Gaussian function')
