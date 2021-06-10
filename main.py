@@ -64,7 +64,7 @@ Some arrays are also defined here:
          t_val  : array to store all time-coordinate values
 """
 
-h       = 0.001
+h       = 0.01
 k       = 0.001
 x_range = (-4,4)
 n       = int((x_range[1]- x_range[0])/h)+1
@@ -76,7 +76,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 1.5 #nombre periode
+ntp     = 10 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -456,6 +456,8 @@ Moyenne de sigma dérivée par x * x * dérivée sigma
                               relative to time.
     derivee_x_psi           : derivative relative to x of psi.
     derivee_moyenne_I       : derivative of the Ermakov's invariant
+
+    valeur_tampon           : just an implicit cache-array
 '''
 
 quatriem_moyenne        = []
@@ -464,22 +466,28 @@ derivee_x_derivee_sigma = []
 derivee_x_psi           = []
 derivee_moyenne_I       = []
 
-
 derivee_x_derivee_sigma.append(0)
 for i in range(1,int(len(t_val)-1)):
-    derivee_x_psi.append(0)
     derivee_x_derivee_sigma.append((derivee_sigma[i-1]- derivee_sigma[i+1])/(2*h) )
-
-    for w in range(1,int(len(x)-1)):
-        derivee_x_psi.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
-    derivee_x_psi.append(0)
 derivee_x_derivee_sigma.append(0)
-"""
+
+for i in range(int(len(t_val))):
+    valeur_tampon = []
+
+    for w in range(int(len(x))):
+        if w==0 or w==len(x)-1:
+            valeur_tampon.append(0)
+        else:
+            valeur_tampon.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
+        #derivee_x_psi.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
+#    derivee_x_psi.append(0)
+    derivee_x_psi.append(valeur_tampon)
+
+
 print(len(PSI_t))
 print(len(PSI_t[t_val[1]] ))
 print(len(derivee_x_psi[1] ))
-print(len(x[1] ))
-"""
+
 for i in range(len(t_val)):
     quatriem_moyenne.append( simps( np.conj(PSI_t[t_val[i]])*x[i]*derivee_x_psi[i], x , dx=h ))
 
@@ -496,11 +504,200 @@ derivee_moyenne_I.append(0)
 
 
 """
-    oui
+    coordonnee_temps : analogous to t_val but with lot's of precision
 """
 coordonnee_temps = np.linspace(t_val[0],t_val[int(len(t_val)-1)],5000)
 
+'''=========================================================================='''
+'''
+.png creation
+'''
 
+plt.rcParams["figure.figsize"] = (13,13) #taille de mon image
+
+# plot the line chart
+fig, axs = plt.subplots(3,3)
+st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize=20)
+
+'''======================================================================='''
+''' axs[0,0]
+—————————————
+| X |   |   |
+—————————————
+|   |   |   |
+—————————————
+|   |   |   |
+—————————————
+'''
+
+axs[0,0].set_title('Width of the Gaussian function')
+axs[0,0].set_ylabel(' ')
+axs[0,0].set_xlabel('time $t$ in s')
+axs[0,0].plot(t_val    , sigma_width           , color='blue' , label= 'width'               ) #
+axs[0,0].legend(loc="upper right", prop={'size': 9})
+'''=========================================================================='''
+''' axs[0,1]
+—————————————
+|   | X |   |
+—————————————
+|   |   |   |
+—————————————
+|   |   |   |
+—————————————
+'''
+axs[0,1].set_title('Energy fluctuation over time')
+axs[0,1].set_ylabel(' ')
+axs[0,1].set_xlabel('time $t$ in s')
+axs[0,1].plot(t_val    , Eigenvalue_stock          , color='black' , label = 'Eigen'               )
+axs[0,1].legend(loc="upper right", prop={'size': 9})
+
+'''=========================================================================='''
+''' axs[0,2]
+—————————————
+|   |   | X |
+—————————————
+|   |   |   |
+—————————————
+|   |   |   |
+—————————————
+'''
+
+'''======================================================================'''
+''' axs[1,0]
+—————————————
+|   |   |   |
+—————————————
+| X |   |   |
+—————————————
+|   |   |   |
+—————————————
+'''
+axs[1,0].set_title('Potential well oscillation')
+axs[1,0].set_ylabel(' ')
+axs[1,0].set_xlabel('time $t$ in s')
+axs[1,0].plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green' , label = 'fit'                     )
+axs[1,0].plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='black' , label = 'potential'               )
+axs[1,0].legend(loc="upper right", prop={'size': 9})
+
+'''======================================================================'''
+''' axs[1,1]
+—————————————
+|   |   |   |
+—————————————
+|   | X |   |
+—————————————
+|   |   |   |
+—————————————
+'''
+axs[1,1].set_title('$t=$%.3f' %t_val[0])
+axs[1,1].set_ylabel(' ')
+axs[1,1].set_xlabel('space $x$')
+axs[1,1].plot(x, (2+np.cos(omega*t_val[0]))*(x**2)*0.5            , color='black' , label ='potential')
+#axs[1,1].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
+axs[1,1].plot(x, np.absolute(PSI_t[t_val[0]])   , color='red'   , label ='wavefunction gs')
+axs[1,1].set_ylim(-0.5,2.5)
+axs[1,1].legend(loc="best", prop={'size': 9})
+
+
+'''======================================================================'''
+''' axs[1,2]
+—————————————
+|   |   |   |
+—————————————
+|   |   | X |
+—————————————
+|   |   |   |
+—————————————
+'''
+
+'''======================================================================'''
+''' axs[2,0]
+—————————————
+|   |   |   |
+—————————————
+|   |   |   |
+—————————————
+| X |   |   |
+—————————————
+'''
+axs[2,0].set_title('Berry phase $beta=$%.3f' %berry_phase[k])
+axs[2,0].set_ylabel('$beta(t)$ in degrees')
+axs[2,0].set_xlabel('time $t$ in s')
+axs[2,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
+axs[2,0].legend(loc="best", prop={'size': 9})
+'''======================================================================'''
+''' axs[2,1]
+—————————————
+|   |   |   |
+—————————————
+|   |   |   |
+—————————————
+|   | X |   |
+—————————————
+'''
+
+axs[2,1].set_title('alpha coefficient')
+axs[2,1].set_ylabel(' ')
+axs[2,1].set_xlabel('time $t$ in s')
+axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
+axs[2,1].plot(t_val[1:len(t_val)-1], rapport_sigma[1:len(t_val)-1], color='green'  , label ='$alpha(t)$'  )########## important
+
+"""
+if k==0 or k>len(t_val)-2:
+    print('')
+else: axs[2,1].plot(t_val[k], rapport_sigma[k-1] ,'ro', color='red'   , label ='instantaneous' )
+"""
+axs[2,1].legend(loc="upper right", prop={'size': 9})
+
+
+'''======================================================================'''
+''' axs[2,2]
+—————————————
+|   |   |   |
+—————————————
+|   |   |   |
+—————————————
+|   |   | X |
+—————————————
+'''
+axs[2,2].set_title('Invariant plot')
+axs[2,2].set_ylabel(' ')
+axs[2,2].set_xlabel('time $t$ in s')
+axs[2,2].plot(t_val[2:len(t_val)-1], Omega_invar[1:len(Omega_invar)]   , color='black'   , label = '$\Omega$'            )
+axs[2,2].plot(t_val[1:len(t_val)-1], valeur_moyenne_I[1:len(t_val)-1]  , color='red'     , label = '$I(t)$' )
+#axs[2,2].plot(t_val[1:len(t_val)-1], derivee_moyenne_I[1:len(t_val)-1] , color='green'   , label = '$dI$' )
+axs[2,2].legend(loc="best", prop={'size': 9})
+
+'''======================================================================'''
+plt.subplots_adjust(
+                    left=0.1,
+                    bottom=0.1,
+                    right=0.9,
+                    top=0.9,
+                    wspace=0.3,
+                    hspace=0.3 # 0.7
+                    )
+
+filename = 'print.png'
+
+
+    # save frame
+plt.savefig(filename)
+plt.close()
+
+
+
+
+
+
+'''=========================================================================='''
+'''
+.gif creation
+'''
+
+
+
+"""
 plt.rcParams["figure.figsize"] = (13,13) #taille de mon image
 filenames = []
 for k in range(len(t_val)):
@@ -689,6 +886,7 @@ with imageio.get_writer('mygif.gif', mode='I') as writer:
 # Remove files
 for filename in set(filenames):
     os.remove(filename)
+"""
 
 end = time.clock()
 print('time taken to run the full program is ',end-start,' seconds')
