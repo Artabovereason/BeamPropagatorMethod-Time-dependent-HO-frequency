@@ -597,58 +597,170 @@ for i in range(1,len(valeur_moyenne_I)-1):
     moyenne_dI.append(average)
 
 
-plt.rcParams["figure.figsize"] = (10,10) #taille de mon image
+plt.rcParams["figure.figsize"] = (13,13) #taille de mon image
 filenames = []
 for k in range(len(t_val)):
     # plot the line chart
-    fig, axs = plt.subplots(2,2)
-    st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize="x-large")
-    axs[0,0].set_title('Quantum harmonic oscillator at $t=$%.3f' %t_val[k])
-    axs[0,0].set_ylabel(' ')
-    axs[0,0].set_xlabel('space $x$')
-    axs[0,0].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
-    axs[0,0].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction gs')
-    axs[0,0].set_ylim(-0.5,2.5)
-    axs[0,0].legend(loc="upper right")
-
-    axs[0,1].set_title('Width of the Gaussian function')
-    axs[0,1].set_ylabel(' ')
-    axs[0,1].set_xlabel('time $t$ in s')
-    axs[0,1].plot(t_val   , sigma_width         , color='blue'    , label ='width' ) #
-    axs[0,1].plot(t_val[k], sigma_width[k] ,'ro', color='red'   , label ='instantaneous width' ) #
-
-    axs[0,1].plot(t_val[1:len(t_val)-1],valeur_moyenne_I[1:len(t_val)-1] , color='red' )
-    axs[0,1].plot(t_val[1:len(t_val)-1],moyenne_I , color='magenta' )
-    axs[0,1].plot(t_val[1:len(t_val)-1],derivee_moyenne_I[1:len(t_val)-1] , color='green' )
-    axs[0,1].plot(t_val[1:len(t_val)-1],moyenne_dI , color='yellow' )
-
-    axs[0,1].plot(t_val, Eigenvalue_stock, color='black'  , label ='Eigen'  )                       ##########
-    axs[0,1].plot(t_val[k], Eigenvalue_stock[k],'ro', color='red'  , label ='instantaneous Eigen'  )##########
+    fig, axs = plt.subplots(3,3)
+    st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize=20)
 
 
-    axs[0,1].legend(loc="upper right")
+    '''======================================================================='''
+    ''' 0 0
+    —————————————
+    | X |   |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    '''
+    with plt.xkcd():
+        axs[0,0].set_title('Width of the Gaussian function')
+        axs[0,0].set_ylabel(' ')
+        axs[0,0].set_xlabel('time $t$ in s')
+        axs[0,0].plot(t_val    , sigma_width           , color='blue' , label= 'width'               ) #
+        axs[0,0].plot(t_val[k] , sigma_width[k] , 'ro' , color='red'  , label= 'instantaneous width' ) #
+        axs[0,0].legend(loc="best", prop={'size': 9})
+    '''======================================================================='''
+    ''' 0 1
+    —————————————
+    |   | X |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    '''
+    with plt.xkcd():
+        axs[0,1].set_title('Energy fluctuation over time')
+        axs[0,1].set_ylabel(' ')
+        axs[0,1].set_xlabel('time $t$ in s')
+        axs[0,1].plot(t_val    , Eigenvalue_stock          , color='black' , label = 'Eigen'               )
+        axs[0,1].plot(t_val[k] , Eigenvalue_stock[k], 'ro' , color='red'   , label = 'instantaneous Eigen' )
+        axs[0,1].legend(loc="best", prop={'size': 9})
 
-    axs[1,0].set_title('Berry phase $beta=$%.3f' %berry_phase[k])
-    axs[1,0].set_ylabel('$beta(t)$ in degrees')
-    axs[1,0].set_xlabel('time $t$ in s')
-    axs[1,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
-    axs[1,0].plot(t_val[k], berry_phase[k] ,'ro', color='red'  , label ='instantaneous' ) #
-    axs[1,0].plot(t_val[2:len(t_val)-1], Omega_invar[1:len(Omega_invar)], color='black'  , label ='$\Omega$'  )
-    axs[1,0].legend(loc="upper right")
+    '''======================================================================'''
+    ''' 0 2
+    —————————————
+    |   |   | X |
+    —————————————
+    |   |   |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    '''
 
-    axs[1,1].set_title('alpha coefficient of the Gaussian function')
-    axs[1,1].set_ylabel(' ')
-    axs[1,1].set_xlabel('time $t$ in s')
+    '''======================================================================'''
+    ''' 1 0
+    —————————————
+    |   |   |   |
+    —————————————
+    | X |   |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    '''
+    with plt.xkcd():
+        axs[1,0].set_title('Potential well oscillation')
+        axs[1,0].set_ylabel(' ')
+        axs[1,0].set_xlabel('time $t$')
+        axs[1,0].plot(t_val, [V(1,k) for k in t_val]          , color='black' , label ='potential')
+        #axs[1,1].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction gs')
+        #axs[1,1].set_ylim(-0.5,2.5)
+        axs[1,0].legend(loc="best", prop={'size': 9})
 
-    axs[1,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
+    '''======================================================================'''
+    ''' 1 1
+    —————————————
+    |   |   |   |
+    —————————————
+    |   | X |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    '''
+    with plt.xkcd():
+        axs[1,1].set_title('$t=$%.3f' %t_val[k])
+        axs[1,1].set_ylabel(' ')
+        axs[1,1].set_xlabel('space $x$')
+        axs[1,1].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
+        axs[1,1].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction gs')
+        axs[1,1].set_ylim(-0.5,2.5)
+        axs[1,1].legend(loc="best", prop={'size': 9})
 
 
-    if k==0 or k>len(t_val)-2:
-        print('')
-    else: axs[1,1].plot(t_val[k], rapport_sigma[k-1] ,'ro', color='red'   , label ='instantaneous' ) #
+    '''======================================================================'''
+    ''' 1 2
+    —————————————
+    |   |   |   |
+    —————————————
+    |   |   | X |
+    —————————————
+    |   |   |   |
+    —————————————
+    '''
+
+    '''======================================================================'''
+    ''' 2 0
+    —————————————
+    |   |   |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    | X |   |   |
+    —————————————
+    '''
+    with plt.xkcd():
+        axs[2,0].set_title('Berry phase $beta=$%.3f' %berry_phase[k])
+        axs[2,0].set_ylabel('$beta(t)$ in degrees')
+        axs[2,0].set_xlabel('time $t$ in s')
+        axs[2,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
+        axs[2,0].plot(t_val[k], berry_phase[k] ,'ro', color='red'  , label ='instantaneous' ) #
+        axs[2,0].legend(loc="best", prop={'size': 9})
+
+    '''======================================================================'''
+    ''' 2 1
+    —————————————
+    |   |   |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    |   | X |   |
+    —————————————
+    '''
+    with plt.xkcd():
+        axs[2,1].set_title('alpha coefficient')
+        axs[2,1].set_ylabel(' ')
+        axs[2,1].set_xlabel('time $t$ in s')
+        axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
+
+        if k==0 or k>len(t_val)-2:
+            print('')
+        else: axs[2,1].plot(t_val[k], rapport_sigma[k-1] ,'ro', color='red'   , label ='instantaneous' ) #
+        axs[2,1].legend(loc="best", prop={'size': 9})
 
 
-    axs[1,1].legend(loc="upper right")
+    '''======================================================================'''
+    ''' 2 2
+    —————————————
+    |   |   |   |
+    —————————————
+    |   |   |   |
+    —————————————
+    |   |   | X |
+    —————————————
+    '''
+    with plt.xkcd():
+        axs[2,2].set_title('Invariant plot')
+        axs[2,2].plot(t_val[2:len(t_val)-1], Omega_invar[1:len(Omega_invar)]   , color='black'   , label = '$\Omega$'            )
+        axs[2,2].plot(t_val[1:len(t_val)-1], valeur_moyenne_I[1:len(t_val)-1]  , color='red'     , label = '$I$' )
+        axs[2,2].plot(t_val[1:len(t_val)-1], moyenne_I                         , color='magenta' , label = 'Mean $I$'            )
+        axs[2,2].plot(t_val[1:len(t_val)-1], derivee_moyenne_I[1:len(t_val)-1] , color='green'   , label = '$dI$' )
+        axs[2,2].plot(t_val[1:len(t_val)-1], moyenne_dI                        , color='yellow'  , label = 'Mean $dI$'           )
+        axs[2,2].legend(loc="best", prop={'size': 9})
+
+    '''======================================================================'''
     plt.subplots_adjust(
                         left=0.1,
                         bottom=0.1,
