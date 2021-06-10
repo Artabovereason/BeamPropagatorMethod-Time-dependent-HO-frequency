@@ -64,7 +64,7 @@ Some arrays are also defined here:
 """
 
 h       = 0.01
-k       = 0.05
+k       = 0.01
 x_range = (-4,4)
 n       = int((x_range[1]- x_range[0])/h)+1
 lam     = (1j*k)/(4*(h**2))
@@ -75,7 +75,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 50 #nombre periode
+ntp     = 3 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -425,7 +425,7 @@ Moyenne de sigma x * dérivée sigma * dérivée par x
 
     list_derivee_premiere : return the derivative relative to x of psi
 '''
-
+"""
 troisiem_moyenne      = []
 troisiem_nouvelle_var = []
 list_derivee_premiere = []
@@ -441,7 +441,7 @@ for i in range(int(len(t_val))):
 for i in range(len(t_val)):
     troisiem_moyenne.append(  simps( 1j*np.conj(PSI_t[t_val[i]])*sigma_width[i]*derivee_sigma[i]*x[i]* list_derivee_premiere[i]                     , x , dx=h )  )
 
-
+"""
 
 '''=========================================================================='''
 '''
@@ -451,11 +451,6 @@ Moyenne de sigma dérivée par x * x * dérivée sigma
                               relative to time.
     derivee_x_psi           : derivative relative to x of psi.
     derivee_moyenne_I       : derivative of the Ermakov's invariant
-    moyenne_I               : classical-mean of I
-    moyenne_dI              : classical-mean of derivative of I
-
-
-    Average                 : takes a list as input and return it's mean value
 '''
 
 quatriem_moyenne        = []
@@ -463,11 +458,7 @@ quatriem_nouvelle_var   = []
 derivee_x_derivee_sigma = []
 derivee_x_psi           = []
 derivee_moyenne_I       = []
-moyenne_I               = []
-moyenne_dI              = []
 
-def Average(lst):
-    return sum(lst) / len(lst)
 
 derivee_x_derivee_sigma.append(0)
 for i in range(1,int(len(t_val)-1)):
@@ -480,10 +471,13 @@ for i in range(1,int(len(t_val)-1)):
 derivee_x_derivee_sigma.append(0)
 
 for i in range(len(t_val)):
-    quatriem_moyenne.append( simps( 1j*np.conj(PSI_t[t_val[i]])* PSI_t[t_val[i]]*(derivee_sigma[i]+ x[i]*derivee_x_derivee_sigma[i] )+np.conj(PSI_t[t_val[i]])*x[i]*derivee_sigma[i]*derivee_x_psi[i]  , x , dx=h ))
+    quatriem_moyenne.append( simps( np.conj(PSI_t[t_val[i]])*x[i]*derivee_x_psi[i], x , dx=h ))
+
+
+
 
 for i in range(len(t_val)):
-    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+troisiem_moyenne[i]+quatriem_moyenne[i] ) ) )
+    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+1j* sigma_width[i]*derivee_sigma[i]*2*quatriem_moyenne[i]+1j* sigma_width[i]*derivee_sigma[i] ) ) )
 
 derivee_moyenne_I.append(0)
 for i in range(1,len(t_val)-1):
@@ -491,9 +485,10 @@ for i in range(1,len(t_val)-1):
 derivee_moyenne_I.append(0)
 
 
-for i in range(1,len(valeur_moyenne_I)-1):
-    moyenne_I.append(Average(valeur_moyenne_I))
-    moyenne_dI.append(Average(derivee_moyenne_I))
+"""
+    oui
+"""
+coordonnee_temps = np.linspace(t_val[0],t_val[int(len(t_val)-1)],5000)
 
 
 plt.rcParams["figure.figsize"] = (13,13) #taille de mon image
@@ -501,8 +496,7 @@ filenames = []
 for k in range(len(t_val)):
     # plot the line chart
     fig, axs = plt.subplots(3,3)
-    #st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize=20)
-    st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency", fontsize=20)
+    st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize=20)
 
     '''======================================================================='''
     ''' axs[0,0]
@@ -562,8 +556,9 @@ for k in range(len(t_val)):
     axs[1,0].set_title('Potential well oscillation')
     axs[1,0].set_ylabel(' ')
     axs[1,0].set_xlabel('time $t$ in s')
-    axs[1,0].plot(t_val    , [V(1,k) for k in t_val]          , color='black' , label = 'potential'               )
-    axs[1,0].plot(t_val[k] , V(1,k)                 , 'ro'    , color='red'   , label = 'instantaneous potential' )
+    axs[1,0].plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]              , color='black' , label = 'potential'               )
+    axs[1,0].plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]             , ls=dashed , color='green' , label = 'fit'                     )
+    axs[1,0].plot(t_val[k]         , (2+np.cos(omega*t_val[k]))*0.5                       , 'ro'      , color='red'   , label = 'instantaneous potential' )
     axs[1,0].legend(loc="upper right", prop={'size': 9})
 
     '''======================================================================'''
@@ -579,7 +574,8 @@ for k in range(len(t_val)):
     axs[1,1].set_title('$t=$%.3f' %t_val[k])
     axs[1,1].set_ylabel(' ')
     axs[1,1].set_xlabel('space $x$')
-    axs[1,1].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
+    axs[1,1].plot(x, (2+np.cos(omega*t_val[k]))*(x**2)*0.5            , color='black' , label ='potential')
+    #axs[1,1].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
     axs[1,1].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction gs')
     axs[1,1].set_ylim(-0.5,2.5)
     axs[1,1].legend(loc="best", prop={'size': 9})
@@ -629,9 +625,11 @@ for k in range(len(t_val)):
     axs[2,1].set_xlabel('time $t$ in s')
     axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
 
+    """
     if k==0 or k>len(t_val)-2:
         print('')
-    else: axs[2,1].plot(t_val[k], rapport_sigma[k-1] ,'ro', color='red'   , label ='instantaneous' ) #
+    else: axs[2,1].plot(t_val[k], rapport_sigma[k-1] ,'ro', color='red'   , label ='instantaneous' )
+    """
     axs[2,1].legend(loc="upper right", prop={'size': 9})
 
 
@@ -647,10 +645,8 @@ for k in range(len(t_val)):
     '''
     axs[2,2].set_title('Invariant plot')
     axs[2,2].plot(t_val[2:len(t_val)-1], Omega_invar[1:len(Omega_invar)]   , color='black'   , label = '$\Omega$'            )
-    axs[2,2].plot(t_val[1:len(t_val)-1], valeur_moyenne_I[1:len(t_val)-1]  , color='red'     , label = '$I$' )
-    axs[2,2].plot(t_val[1:len(t_val)-1], moyenne_I                         , color='magenta' , label = 'Mean $I$'            )
-    axs[2,2].plot(t_val[1:len(t_val)-1], derivee_moyenne_I[1:len(t_val)-1] , color='green'   , label = '$dI$' )
-    axs[2,2].plot(t_val[1:len(t_val)-1], moyenne_dI                        , color='yellow'  , label = 'Mean $dI$'           )
+    axs[2,2].plot(t_val[1:len(t_val)-1], valeur_moyenne_I[1:len(t_val)-1]  , color='red'     , label = '$I(t)$' )
+    #axs[2,2].plot(t_val[1:len(t_val)-1], derivee_moyenne_I[1:len(t_val)-1] , color='green'   , label = '$dI$' )
     axs[2,2].legend(loc="best", prop={'size': 9})
 
     '''======================================================================'''
