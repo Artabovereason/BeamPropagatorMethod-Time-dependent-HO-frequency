@@ -44,6 +44,7 @@ class time_steps(object):
             ts    = ts + k
             count = count + 1
         return t_val
+
 '''=========================================================================='''
 
 """
@@ -52,25 +53,26 @@ Parameters :
         k       : step size for time-coordinate values
         x_range : range of x-coordinate values
         n       : number of x-coordinates to be included
-        lam     : lambda value for A and B matrices
+        lam     : lambda value for A or L and B or U matrices
         omega   : The frequency of oscillation of time-dependent potential
 
+        z       : initial slope to calculate Psi
 Some arrays are also defined here:
          x      : array to store the x-coordinate values
          y      : array to store psi(xi) at each xi
          t_val  : array to store all time-coordinate values
 """
 
-h       = 0.01                                              #step size in x coordinate
-k       = 0.05                                               #step size in t coordinate
+h       = 0.01
+k       = 0.05
 x_range = (-4,4)
-n       = int((x_range[1]- x_range[0])/h)+1                           #no. of x points
-lam     = (1j*k)/(4*(h**2))                        #lambda value of L and U matrices
+n       = int((x_range[1]- x_range[0])/h)+1
+lam     = (1j*k)/(4*(h**2))
 omega   = float(input('Enter the value of omega : '))
 
 x       = np.linspace(x_range[0],x_range[1],n)
 y       = np.zeros(n)
-z       = 0.000001                                     #initial slope to calculate Psi
+z       = 0.000001
 y[1]    = z*h
 
 ntp     = 50 #nombre periode
@@ -79,8 +81,6 @@ t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
 
 '''=========================================================================='''
-
-
 
 """
 Here we define the time-dependent potential V(x,t).
@@ -91,15 +91,13 @@ to the potential as discussed in report.
 If a different potential is to be studied change b to the
 potential of interest.
 """
-dist    = 2            #a value for the potential 2
-epsilon = 1          #epsilon value for the potential 1
-gamma   = 0.25          #gamma value for the potential 0.025
+dist    = 2          # a value for the potential
+epsilon = 1          # epsilon value for the potential
+gamma   = 0.25       # gamma value for the potential
 
 def V(x,t):
     '''takes in the x coordinate and time
        returns the time dependent potential'''
-    #b = np.cos(omega*t)*(x**2)
-    #b = -((2*epsilon)/dist**2)*(x**2)+(epsilon/(dist**4))*(x**4) + gamma*np.cos(omega*t)*(x**3)
     b = (2+np.cos(omega*t))*(x**2)/2
     return b
 
@@ -242,11 +240,10 @@ for t in t_val:
 '''=========================================================================='''
 '''Generation of Psi(x,t)'''
 Psi_0           = Psi_gs[t_val[0]]
-PSI_t           = {}                   #stores the Psi at each time
-PSI_t[t_val[0]] = Psi_0      #set the initial Psi here
+PSI_t           = {}               #stores the Psi at each time
+PSI_t[t_val[0]] = Psi_0            #set the initial Psi here
 Psi             = PSI_t[t_val[0]]
 for t in range(1,len(t_val)):
-    #print('Psi(at t = %f) generated' %t)
     bv    = []
     b_val = B_val[t_val[t-1]]
     l_val = L_val[t_val[t]]
@@ -285,7 +282,7 @@ for i in t_val:
     Coeff[i] = C(Psi_gs[i],PSI_t[i])
 
 '''=========================================================================='''
-Coeff2 = {}                 #saves cc* for each time step
+Coeff2 = {}                   #saves cc* for each time step
 for i in t_val:
     cn2 = (Coeff[i]*comp_conj(Coeff[i])).real
     Coeff2[i] = cn2
@@ -295,15 +292,13 @@ for i in t_val:
 
 C1_val = np.array([i for i in Coeff.values()] )
 C2_val = np.array([i for i in Coeff2.values()])
-"""
-@('c(1)2 values are = ',C2_val)
-print('c(1) values are = ' ,C1_val)
-"""
 
-end = time.clock()
-print('time taken to run the program is ',end-start,' seconds')
+#end = time.clock()
+#print('time taken to run the program is ',end-start,' seconds')
 '''=========================================================================='''
-
+'''
+Plot of the coefficient
+'''
 """
 plt.figure()
 plt.title('omega = %.3f' %omega)
@@ -319,85 +314,57 @@ plt.show()
 """
 
 '''=========================================================================='''
+'''
+    sigma_width   : width of the Gaussian wavefunction at x=0.
+    valeur_valeur : an array to have the sigma_width values.
+    berry_phase   : array of Berry phase, which is defined as minus integral
+                    of 1/sigma squared.
+    derivee_sigma : derivative relative to time for sigma_width.
+    rapport_sigma : quotient of derivee_sigma/2*sigma.
+    autre_derivee : a way to calculate the derivative of sigma using logarithmic
+                    derivative instead of derivee_sigma and rapport_sigma.
 
-"""
-plt.figure()
-plt.title('Representation of width $\sigma$ of the gaussian through time')
-plt.xlabel('<----$t$---->')
-plt.ylabel('$\sigma$')
-#plt.ylim(-105,+105)
-plt.legend()
-plt.plot(t_val, sigma_width , color='black' , label ='width' ) #
-plt.plot(t_val, abs(C1_val ), color='blue'  , label ='normalisation'  )     #
-plt.show()
-"""
+    function      : takes x and return -1/ x squared, i'm using it to calcualte
+                    the Berry Phase as a simpson evaluation of its function.
+'''
 
-'''=========================================================================='''
-
-
-sigma_width = []
-for i in range(len(t_val)):
-    sigma_width.append(1/max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
+sigma_width   = []
+valeur_valeur = []
+berry_phase   = []
+derivee_sigma = []
+rapport_sigma = []
+autre_derivee = []
 
 def function(x):
     return [-1/ ((i) ** 2) for i in x]
 
-valeur_valeur = []
-berry_phase   = []
-for m in range(len(t_val)):
-    valeur_valeur.append(sigma_width[m])
-
-for w in range(len(t_val)):
-    if w==0: berry_phase.append(0)
+for i in range(len(t_val)):
+    sigma_width.append(1/max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
+    valeur_valeur.append(sigma_width[i])
+    if i==0: berry_phase.append(0)
     else :
-        #berry_phase.append(simps( function(valeur_valeur[:w]) , valeur_valeur[:w] , dx=k ) )
-        berry_phase.append(simps( function(valeur_valeur[:w]) , t_val[:w] , dx=k ) )
+        berry_phase.append(simps( function(valeur_valeur[:i]) , t_val[:i] , dx=k ) )
 
-derivee_sigma = [] # je calcul la dérivée du width : sigma
+
 derivee_sigma.append(0)
 for i in range(1,len(t_val)-1):
     derivee_sigma.append(  (sigma_width[i-1]- sigma_width[i+1])/(2*k) )
 derivee_sigma.append(0)
 
-rapport_sigma = [] #je fait le rapport dérivée sigma / 2*sigma pour obtenir le coefficient alpha
 for i in range(1,len(t_val)-1):
     rapport_sigma.append( derivee_sigma[i-1]/(2*sigma_width[i]) )
 
-autre_derivee = []
 autre_derivee.append(0)
 for i in range(1,len(t_val)-1):
     autre_derivee.append( 0.5 *  ( np.log(sigma_width[i-1])- np.log(sigma_width[i+1]))/(2*k)     )
 autre_derivee.append(0)
 
 
-"""
-plt.figure()
-plt.title('Representation of width $\sigma$ of the gaussian through time')
-plt.xlabel('<----$t$---->')
-plt.ylabel('$\sigma$')
-#plt.ylim(-105,+105)
-plt.legend()
-plt.plot(t_val                , sigma_width  , color='blue'   , label ='$\sigma$' )
-plt.plot(t_val[1:len(t_val)-1],derivee_sigma , color='red'    , label ='$\dot{\sigma}$'  )     #
-plt.plot(t_val[1:len(t_val)-1],rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )     #
-plt.show()
-"""
 
 '''=========================================================================='''
-dimension_periode = np.linspace(0, max(t_val), ntp )
-zeros = []
-for i in range(len(dimension_periode)):
-    zeros.append(0)
-
-'''=========================================================================='''
-le_potentiel = [] #ça permet de tracé l'évolution du potentiel en fonction du temps
-
-for i in range(len(t_val)):
-    le_potentiel.append(V(1,i))
-'''=========================================================================='''
-
 '''
-L'invariant Omega ici défini comme Omega = sigma**2 * dérivée de la phase de Berry
+    Omega : invariant defined as sigma**2 * derivative of Berry phase
+
 '''
 Omega_invar = []
 for i in range(1,len(t_val)-1):
@@ -406,13 +373,13 @@ for i in range(1,len(t_val)-1):
 '''=========================================================================='''
 
 '''
-On construit l'invariant de Ermakov
+    valeur_moyenne_I : Ermakov's invariant taken as the quantum-mean value of I(t)
+    sigma_carree     : Return sigma squared
 '''
 
-valeur_moyenne_I      = []
+valeur_moyenne_I = []
+sigma_carree     = []
 
-
-sigma_carree = []
 for i in range(len(sigma_width)):
     sigma_carree.append((sigma_width[i])**2)
 
@@ -455,12 +422,14 @@ for i in range(len(t_val)):
 '''=========================================================================='''
 '''
 Moyenne de sigma x * dérivée sigma * dérivée par x
+
+    list_derivee_premiere : return the derivative relative to x of psi
 '''
 
 troisiem_moyenne      = []
 troisiem_nouvelle_var = []
-
 list_derivee_premiere = []
+
 for i in range(int(len(t_val))):
     derivee_premiere_prems = []
     derivee_premiere_prems.append(0)
@@ -477,65 +446,54 @@ for i in range(len(t_val)):
 '''=========================================================================='''
 '''
 Moyenne de sigma dérivée par x * x * dérivée sigma
+
+    derivee_x_derivee_sigma : derivative relative to x of the sigma derivated
+                              relative to time.
+    derivee_x_psi           : derivative relative to x of psi.
+    derivee_moyenne_I       : derivative of the Ermakov's invariant
+    moyenne_I               : classical-mean of I
+    moyenne_dI              : classical-mean of derivative of I
+
+
+    Average                 : takes a list as input and return it's mean value
 '''
 
-quatriem_moyenne      = []
-quatriem_nouvelle_var = []
-
-#list_derivee_premiere = []
-"""for i in range(int(len(t_val))):
-    derivee_premiere_prems = []
-    derivee_premiere_prems.append(0)
-    for w in range(int(1),int(len(x)-1)):
-        derivee_premiere_prems.append( sigma_width[i]* derivee_sigma[i] )
-    derivee_premiere_prems.append(0)
-    list_derivee_premiere.append(derivee_premiere_prems)
-"""
+quatriem_moyenne        = []
+quatriem_nouvelle_var   = []
 derivee_x_derivee_sigma = []
-derivee_x_derivee_sigma.append(0)
-for i in range(1,int(len(t_val)-1)):
-    derivee_x_derivee_sigma.append((derivee_sigma[i-1]- derivee_sigma[i+1])/(2*h) )
-derivee_x_derivee_sigma.append(0)
+derivee_x_psi           = []
+derivee_moyenne_I       = []
+moyenne_I               = []
+moyenne_dI              = []
 
-derivee_x_psi = []
-#derivee_x_psi.append(0)
+def Average(lst):
+    return sum(lst) / len(lst)
+
+derivee_x_derivee_sigma.append(0)
 for i in range(1,int(len(t_val)-1)):
     derivee_x_psi.append(0)
+    derivee_x_derivee_sigma.append((derivee_sigma[i-1]- derivee_sigma[i+1])/(2*h) )
+
     for w in range(1,int(len(x)-1)):
         derivee_x_psi.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
     derivee_x_psi.append(0)
-#derivee_x_psi.append(0)
+derivee_x_derivee_sigma.append(0)
 
 for i in range(len(t_val)):
     quatriem_moyenne.append( simps( 1j*np.conj(PSI_t[t_val[i]])* PSI_t[t_val[i]]*(derivee_sigma[i]+ x[i]*derivee_x_derivee_sigma[i] )+np.conj(PSI_t[t_val[i]])*x[i]*derivee_sigma[i]*derivee_x_psi[i]  , x , dx=h ))
 
-
-
-
-
 for i in range(len(t_val)):
-    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+troisiem_moyenne[i]+quatriem_moyenne[i] ) ) ) #-troisiem_moyenne[i]-quatriem_nouvelle_var[i]
+    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+troisiem_moyenne[i]+quatriem_moyenne[i] ) ) )
 
-#print(valeur_moyenne_I)
-
-derivee_moyenne_I = []
 derivee_moyenne_I.append(0)
 for i in range(1,len(t_val)-1):
     derivee_moyenne_I.append((valeur_moyenne_I[i-1]-valeur_moyenne_I[i+1])/(2*k))
 derivee_moyenne_I.append(0)
 
-moyenne_I  = []
-moyenne_dI = []
-def Average(lst):
-    return sum(lst) / len(lst)
-average = Average(valeur_moyenne_I)
-print("Average of Invariant =", round(average, 4))
+
 for i in range(1,len(valeur_moyenne_I)-1):
-    moyenne_I.append(average)
-average = Average(derivee_moyenne_I)
-print("Average of derivativeInvariant =", round(average, 4))
-for i in range(1,len(valeur_moyenne_I)-1):
-    moyenne_dI.append(average)
+    moyenne_I.append(Average(valeur_moyenne_I))
+    moyenne_dI.append(Average(derivee_moyenne_I))
 
 
 plt.rcParams["figure.figsize"] = (13,13) #taille de mon image
@@ -546,9 +504,8 @@ for k in range(len(t_val)):
     #st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize=20)
     st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency", fontsize=20)
 
-
     '''======================================================================='''
-    ''' 0 0
+    ''' axs[0,0]
     —————————————
     | X |   |   |
     —————————————
@@ -565,7 +522,7 @@ for k in range(len(t_val)):
     axs[0,0].plot(t_val[k] , sigma_width[k] , 'ro' , color='red'  , label= 'instantaneous width' ) #
     axs[0,0].legend(loc="upper right", prop={'size': 9})
     '''======================================================================='''
-    ''' 0 1
+    ''' axs[0,1]
     —————————————
     |   | X |   |
     —————————————
@@ -582,7 +539,7 @@ for k in range(len(t_val)):
     axs[0,1].legend(loc="upper right", prop={'size': 9})
 
     '''======================================================================'''
-    ''' 0 2
+    ''' axs[0,2]
     —————————————
     |   |   | X |
     —————————————
@@ -593,7 +550,7 @@ for k in range(len(t_val)):
     '''
 
     '''======================================================================'''
-    ''' 1 0
+    ''' axs[1,0]
     —————————————
     |   |   |   |
     —————————————
@@ -610,7 +567,7 @@ for k in range(len(t_val)):
     axs[1,0].legend(loc="upper right", prop={'size': 9})
 
     '''======================================================================'''
-    ''' 1 1
+    ''' axs[1,1]
     —————————————
     |   |   |   |
     —————————————
@@ -629,7 +586,7 @@ for k in range(len(t_val)):
 
 
     '''======================================================================'''
-    ''' 1 2
+    ''' axs[1,2]
     —————————————
     |   |   |   |
     —————————————
@@ -640,7 +597,7 @@ for k in range(len(t_val)):
     '''
 
     '''======================================================================'''
-    ''' 2 0
+    ''' axs[2,0]
     —————————————
     |   |   |   |
     —————————————
@@ -657,7 +614,7 @@ for k in range(len(t_val)):
     axs[2,0].legend(loc="best", prop={'size': 9})
 
     '''======================================================================'''
-    ''' 2 1
+    ''' axs[2,1]
     —————————————
     |   |   |   |
     —————————————
@@ -679,7 +636,7 @@ for k in range(len(t_val)):
 
 
     '''======================================================================'''
-    ''' 2 2
+    ''' axs[2,2]
     —————————————
     |   |   |   |
     —————————————
