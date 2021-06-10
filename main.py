@@ -406,37 +406,6 @@ for i in range(1,len(t_val)-1):
 '''=========================================================================='''
 
 '''
-On aimerais construire un Q-oscillateur harmonique, pour lequel sa position q serais
-Q=q/sigma
-'''
-
-'''
-def test(x, a, b):
-    return a * np.sin(b * x)
-
-param, param_cov = curve_fit(test, t_val, sigma_width)
-
-print("Sine funcion coefficients:")
-print(param)
-print("Covariance of coefficients:")
-print(param_cov)
-print(param[0])
-print(param[1])
-
-ans = []
-for i in range(len(t_val)):
-    ans.append( (param[0]*(np.sin(param[1]*t_val[i]))) )
-
-
-plt.plot(t_val, sigma_width, 'o', color ='red', label ="data")
-plt.plot(t_val, ans, '--', color ='blue', label ="optimized data")
-plt.legend()
-plt.show()
-'''
-
-'''=========================================================================='''
-
-'''
 On construit l'invariant de Ermakov
 '''
 
@@ -635,7 +604,7 @@ for k in range(len(t_val)):
     '''
     axs[1,0].set_title('Potential well oscillation')
     axs[1,0].set_ylabel(' ')
-    axs[1,0].set_xlabel('time $t$')
+    axs[1,0].set_xlabel('time $t$ in s')
     axs[1,0].plot(t_val    , [V(1,k) for k in t_val]          , color='black' , label = 'potential'               )
     axs[1,0].plot(t_val[k] , V(1,k)                 , 'ro'    , color='red'   , label = 'instantaneous potential' )
     axs[1,0].legend(loc="upper right", prop={'size': 9})
