@@ -3,6 +3,7 @@ import time
 import matplotlib.pyplot as plt
 import os
 import imageio
+import scipy.signal
 import math
 from scipy.integrate import simps
 from numpy import trapz
@@ -63,8 +64,8 @@ Some arrays are also defined here:
          t_val  : array to store all time-coordinate values
 """
 
-h       = 0.01
-k       = 0.01
+h       = 0.001
+k       = 0.001
 x_range = (-4,4)
 n       = int((x_range[1]- x_range[0])/h)+1
 lam     = (1j*k)/(4*(h**2))
@@ -75,7 +76,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 3 #nombre periode
+ntp     = 1.5 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -473,7 +474,12 @@ for i in range(1,int(len(t_val)-1)):
         derivee_x_psi.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
     derivee_x_psi.append(0)
 derivee_x_derivee_sigma.append(0)
-
+"""
+print(len(PSI_t))
+print(len(PSI_t[t_val[1]] ))
+print(len(derivee_x_psi[1] ))
+print(len(x[1] ))
+"""
 for i in range(len(t_val)):
     quatriem_moyenne.append( simps( np.conj(PSI_t[t_val[i]])*x[i]*derivee_x_psi[i], x , dx=h ))
 
@@ -624,11 +630,13 @@ for k in range(len(t_val)):
     —————————————
     '''
 
+
     axs[2,1].set_title('alpha coefficient')
     axs[2,1].set_ylabel(' ')
     axs[2,1].set_xlabel('time $t$ in s')
     axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
     axs[2,1].plot(t_val[1:len(t_val)-1], rapport_sigma[1:len(t_val)-1], color='green'  , label ='$alpha(t)$'  )########## important
+    axs[2,1].plot(t_val[1:len(t_val)-1], scipy.signal.medfilt(autre_derivee)[1:len(t_val)-1], color='red'  , label ='$alpha(t)$'  )########## important
 
     """
     if k==0 or k>len(t_val)-2:
@@ -649,6 +657,8 @@ for k in range(len(t_val)):
     —————————————
     '''
     axs[2,2].set_title('Invariant plot')
+    axs[2,2].set_ylabel(' ')
+    axs[2,2].set_xlabel('time $t$ in s')
     axs[2,2].plot(t_val[2:len(t_val)-1], Omega_invar[1:len(Omega_invar)]   , color='black'   , label = '$\Omega$'            )
     axs[2,2].plot(t_val[1:len(t_val)-1], valeur_moyenne_I[1:len(t_val)-1]  , color='red'     , label = '$I(t)$' )
     #axs[2,2].plot(t_val[1:len(t_val)-1], derivee_moyenne_I[1:len(t_val)-1] , color='green'   , label = '$dI$' )
