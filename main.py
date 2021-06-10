@@ -6,7 +6,7 @@ import imageio
 import math
 from scipy.integrate import simps
 from numpy import trapz
-
+from scipy.optimize import curve_fit
 start = time.clock()
 
 """
@@ -73,7 +73,7 @@ y       = np.zeros(n)
 z       = 0.000001                                     #initial slope to calculate Psi
 y[1]    = z*h
 
-ntp     = 100 #nombre periode
+ntp     = 50 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -151,8 +151,10 @@ def Eigen():
 '''=========================================================================='''
 '''Storing the instantaneous ground state at each time step'''
 Psi_gs = {}
+Eigenvalue_stock = []
 for t in t_val:
     Eigenvalue = Eigen()[0]
+    Eigenvalue_stock.append(Eigen()[0])
     Psi_gs[t] = Psi(Eigenvalue)[1]
     #print('Psi_ground_state at t = ',t,' generated with eigenvalue = ',Eigenvalue)
 print('All Psi_gs generated')
@@ -352,17 +354,20 @@ for w in range(len(t_val)):
         berry_phase.append(simps( function(valeur_valeur[:w]) , t_val[:w] , dx=k ) )
 
 derivee_sigma = [] # je calcul la dérivée du width : sigma
+derivee_sigma.append(0)
 for i in range(1,len(t_val)-1):
     derivee_sigma.append(  (sigma_width[i-1]- sigma_width[i+1])/(2*k) )
+derivee_sigma.append(0)
 
 rapport_sigma = [] #je fait le rapport dérivée sigma / 2*sigma pour obtenir le coefficient alpha
 for i in range(1,len(t_val)-1):
     rapport_sigma.append( derivee_sigma[i-1]/(2*sigma_width[i]) )
 
 autre_derivee = []
+autre_derivee.append(0)
 for i in range(1,len(t_val)-1):
     autre_derivee.append( 0.5 *  ( np.log(sigma_width[i-1])- np.log(sigma_width[i+1]))/(2*k)     )
-
+autre_derivee.append(0)
 
 
 """
@@ -391,11 +396,205 @@ for i in range(len(t_val)):
     le_potentiel.append(V(1,i))
 '''=========================================================================='''
 
-
+'''
+L'invariant Omega ici défini comme Omega = sigma**2 * dérivée de la phase de Berry
+'''
 Omega_invar = []
 for i in range(1,len(t_val)-1):
-    Omega_invar.append( sigma_width[i]* (berry_phase[i-1]-berry_phase[i+1])/(2*k) )
+    Omega_invar.append( sigma_width[i]*sigma_width[i]* (berry_phase[i-1]-berry_phase[i+1])/(2*k) )
 
+'''=========================================================================='''
+
+'''
+On aimerais construire un Q-oscillateur harmonique, pour lequel sa position q serais
+Q=q/sigma
+'''
+
+'''
+def test(x, a, b):
+    return a * np.sin(b * x)
+
+param, param_cov = curve_fit(test, t_val, sigma_width)
+
+print("Sine funcion coefficients:")
+print(param)
+print("Covariance of coefficients:")
+print(param_cov)
+print(param[0])
+print(param[1])
+
+ans = []
+for i in range(len(t_val)):
+    ans.append( (param[0]*(np.sin(param[1]*t_val[i]))) )
+
+
+plt.plot(t_val, sigma_width, 'o', color ='red', label ="data")
+plt.plot(t_val, ans, '--', color ='blue', label ="optimized data")
+plt.legend()
+plt.show()
+'''
+
+'''=========================================================================='''
+
+'''
+On construit l'invariant de Ermakov
+'''
+
+valeur_moyenne_I      = []
+
+
+sigma_carree = []
+for i in range(len(sigma_width)):
+    sigma_carree.append((sigma_width[i])**2)
+
+'''=========================================================================='''
+'''
+Moyenne de (1/sigma2 +(dérivee sigma)2)x2
+'''
+
+premiere_moyenne      = []
+premiere_nouvelle_var = []
+for i in range(len(sigma_width)):
+    if i==0 or i==int(len(sigma_width)-1):
+        premiere_nouvelle_var.append( (x**2)/(sigma_carree[i])                                                       )
+    else:
+        premiere_nouvelle_var.append( (x**2)/(sigma_carree[i]) + (x**2)*(sigma_width[i-1]- sigma_width[i+1])/(2*k)   )
+
+for i in range(len(t_val)):
+    premiere_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* premiere_nouvelle_var[i]* PSI_t[t_val[i]] , x , dx=h ) )
+
+'''=========================================================================='''
+'''
+Moyenne de sigma2 dérivée seconde par x
+'''
+
+deuxieme_moyenne      = []
+deuxieme_nouvelle_var = []
+
+list_derivee_seconde = []
+for i in range(int(len(t_val))):
+    derivee_seconde_prems = []
+    derivee_seconde_prems.append(0)
+    for w in range(int(1),int(len(x)-1)):
+        derivee_seconde_prems.append( sigma_carree[i]* (PSI_t[t_val[i]][int(w-1)]-2*PSI_t[t_val[i]][w]+PSI_t[t_val[i]][int(w+1)])/(h*h)    )
+    derivee_seconde_prems.append(0)
+    list_derivee_seconde.append(derivee_seconde_prems)
+
+for i in range(len(t_val)):
+    deuxieme_moyenne.append(  simps( np.conj(PSI_t[t_val[i]])* list_derivee_seconde[i]                      , x , dx=h )  )
+
+'''=========================================================================='''
+'''
+Moyenne de sigma x * dérivée sigma * dérivée par x
+'''
+
+troisiem_moyenne      = []
+troisiem_nouvelle_var = []
+
+list_derivee_premiere = []
+for i in range(int(len(t_val))):
+    derivee_premiere_prems = []
+    derivee_premiere_prems.append(0)
+    for w in range(int(1),int(len(x)-1)):
+        derivee_premiere_prems.append( (PSI_t[t_val[i]][int(w-1)]-PSI_t[t_val[i]][int(w+1)])/(2*h)    )
+    derivee_premiere_prems.append(0)
+    list_derivee_premiere.append(derivee_premiere_prems)
+
+for i in range(len(t_val)):
+    troisiem_moyenne.append(  simps( 1j*np.conj(PSI_t[t_val[i]])*sigma_width[i]*derivee_sigma[i]*x[i]* list_derivee_premiere[i]                     , x , dx=h )  )
+
+
+
+'''=========================================================================='''
+'''
+Moyenne de sigma dérivée par x * x * dérivée sigma
+'''
+
+quatriem_moyenne      = []
+quatriem_nouvelle_var = []
+
+#list_derivee_premiere = []
+"""for i in range(int(len(t_val))):
+    derivee_premiere_prems = []
+    derivee_premiere_prems.append(0)
+    for w in range(int(1),int(len(x)-1)):
+        derivee_premiere_prems.append( sigma_width[i]* derivee_sigma[i] )
+    derivee_premiere_prems.append(0)
+    list_derivee_premiere.append(derivee_premiere_prems)
+"""
+derivee_x_derivee_sigma = []
+derivee_x_derivee_sigma.append(0)
+for i in range(1,int(len(t_val)-1)):
+    derivee_x_derivee_sigma.append((derivee_sigma[i-1]- derivee_sigma[i+1])/(2*h) )
+derivee_x_derivee_sigma.append(0)
+
+derivee_x_psi = []
+#derivee_x_psi.append(0)
+for i in range(1,int(len(t_val)-1)):
+    derivee_x_psi.append(0)
+    for w in range(1,int(len(x)-1)):
+        derivee_x_psi.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
+    derivee_x_psi.append(0)
+#derivee_x_psi.append(0)
+
+for i in range(len(t_val)):
+    quatriem_moyenne.append( simps( 1j*np.conj(PSI_t[t_val[i]])* PSI_t[t_val[i]]*(derivee_sigma[i]+ x[i]*derivee_x_derivee_sigma[i] )+np.conj(PSI_t[t_val[i]])*x[i]*derivee_sigma[i]*derivee_x_psi[i]  , x , dx=h ))
+
+
+
+
+
+
+"""
+deuxieme_nouvelle_var.append(0)
+for i in range(1,len(sigma_width)-1):
+    deuxieme_nouvelle_var.append( sigma_carree[i] * list_derivee_seconde[i] )
+deuxieme_nouvelle_var.append(0)
+"""
+
+"""#print(np.real(premiere_moyenne))
+#print(np.real(deuxieme_moyenne))
+print(np.real(troisiem_moyenne))
+print(np.real(1j*troisiem_moyenne))
+print(np.real(quatriem_moyenne))
+print(np.real(1j*quatriem_moyenne))
+"""
+for i in range(len(t_val)):
+    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+troisiem_moyenne[i]+quatriem_moyenne[i] ) ) ) #-troisiem_moyenne[i]-quatriem_nouvelle_var[i]
+
+print(valeur_moyenne_I)
+
+
+def truncate(number: float, digits: int) -> float:
+    pow10 = 10 ** digits
+    return number * pow10 // 1 / pow10
+"""
+for i in range(len(valeur_moyenne_I)):
+    valeur_moyenne_I[i] = truncate(valeur_moyenne_I[i], 2)
+"""
+
+derivee_moyenne_I = []
+derivee_moyenne_I.append(0)
+for i in range(1,len(t_val)-1):
+    derivee_moyenne_I.append((valeur_moyenne_I[i-1]-valeur_moyenne_I[i+1])/(2*k))
+derivee_moyenne_I.append(0)
+
+"""plt.plot(t_val[1:len(t_val)-1],valeur_moyenne_I[1:len(t_val)-1] , color='black' )
+plt.plot(t_val[1:len(t_val)-1],derivee_moyenne_I[1:len(t_val)-1] , color='green' )
+plt.show()"""
+
+moyenne_I  = []
+moyenne_dI = []
+def Average(lst):
+    return sum(lst) / len(lst)
+average = Average(valeur_moyenne_I)
+print("Average of Invariant =", round(average, 4))
+for i in range(1,len(valeur_moyenne_I)-1):
+    moyenne_I.append(average)
+average = Average(derivee_moyenne_I)
+print("Average of derivativeInvariant =", round(average, 4))
+for i in range(1,len(valeur_moyenne_I)-1):
+    moyenne_dI.append(average)
 
 
 plt.rcParams["figure.figsize"] = (10,10) #taille de mon image
@@ -404,39 +603,45 @@ for k in range(len(t_val)):
     # plot the line chart
     fig, axs = plt.subplots(2,2)
     st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize="x-large")
-    axs[0,0].set_title('Time-dependent frequency quantum harmonic oscillator at $t=$%.3f' %t_val[k])
+    axs[0,0].set_title('Quantum harmonic oscillator at $t=$%.3f' %t_val[k])
     axs[0,0].set_ylabel(' ')
     axs[0,0].set_xlabel('space $x$')
     axs[0,0].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
-    axs[0,0].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction')
+    axs[0,0].plot(x, np.absolute(PSI_t[t_val[k]])   , color='red'   , label ='wavefunction gs')
     axs[0,0].set_ylim(-0.5,2.5)
     axs[0,0].legend(loc="upper right")
 
     axs[0,1].set_title('Width of the Gaussian function')
     axs[0,1].set_ylabel(' ')
-    axs[0,1].set_xlabel('time $t$')
+    axs[0,1].set_xlabel('time $t$ in s')
     axs[0,1].plot(t_val   , sigma_width         , color='blue'    , label ='width' ) #
     axs[0,1].plot(t_val[k], sigma_width[k] ,'ro', color='red'   , label ='instantaneous width' ) #
-    #axs[0,1].plot(t_val[1:len(t_val)-1], rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )
+
+    axs[0,1].plot(t_val[1:len(t_val)-1],valeur_moyenne_I[1:len(t_val)-1] , color='red' )
+    axs[0,1].plot(t_val[1:len(t_val)-1],moyenne_I , color='magenta' )
+    axs[0,1].plot(t_val[1:len(t_val)-1],derivee_moyenne_I[1:len(t_val)-1] , color='green' )
+    axs[0,1].plot(t_val[1:len(t_val)-1],moyenne_dI , color='yellow' )
+
+    axs[0,1].plot(t_val, Eigenvalue_stock, color='black'  , label ='Eigen'  )                       ##########
+    axs[0,1].plot(t_val[k], Eigenvalue_stock[k],'ro', color='red'  , label ='instantaneous Eigen'  )##########
+
+
     axs[0,1].legend(loc="upper right")
 
-    axs[1,0].set_title('Berry phase')
-    axs[1,0].set_ylabel('$\gamma(t)$ in degrees')
+    axs[1,0].set_title('Berry phase $beta=$%.3f' %berry_phase[k])
+    axs[1,0].set_ylabel('$beta(t)$ in degrees')
     axs[1,0].set_xlabel('time $t$ in s')
     axs[1,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
     axs[1,0].plot(t_val[k], berry_phase[k] ,'ro', color='red'  , label ='instantaneous' ) #
-    axs[1,0].plot(t_val[1:len(t_val)-1], Omega_invar, color='black'  , label ='$\Omega$'  )
+    axs[1,0].plot(t_val[2:len(t_val)-1], Omega_invar[1:len(Omega_invar)], color='black'  , label ='$\Omega$'  )
     axs[1,0].legend(loc="upper right")
 
-    axs[1,1].set_title('alpha of the Gaussian function')
+    axs[1,1].set_title('alpha coefficient of the Gaussian function')
     axs[1,1].set_ylabel(' ')
-    axs[1,1].set_xlabel('time $t$')
-    axs[1,1].plot(t_val[1:len(t_val)-1], rapport_sigma, color='green'  , label ='$alpha(t)$'  )##########
-    axs[1,1].plot(t_val[1:len(t_val)-1], autre_derivee, color='black'  , label ='$alpha(t)$'  )##########
-    axs[1,1].plot(t_val   , le_potentiel   , color='blue'    , label ='$V(x,t)$' ) #############
-    #axs[1,1].plot(t_val[1:len(t_val)-1], rapport_sigma , color='green'  , label ='$\dot{\sigma}/\sigma$'  )
-    #axs[1,1].plot(dimension_periode, zeros ,'ro', color='black'   , label ='instantaneous' ) #
-    #axs[1,0].plot(dimension_periode, zeros ,'ro', color='black'   , label ='instantaneous' ) #
+    axs[1,1].set_xlabel('time $t$ in s')
+
+    axs[1,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
+
 
     if k==0 or k>len(t_val)-2:
         print('')
@@ -449,8 +654,8 @@ for k in range(len(t_val)):
                         bottom=0.1,
                         right=0.9,
                         top=0.9,
-                        wspace=0.4,
-                        hspace=0.7
+                        wspace=0.3,
+                        hspace=0.3 # 0.7
                         )
 
     filename = f'{k}.png'
