@@ -322,7 +322,8 @@ plt.show()
     derivee_sigma : derivative relative to time for sigma_width.
     rapport_sigma : quotient of derivee_sigma/2*sigma.
     autre_derivee : a way to calculate the derivative of sigma using logarithmic
-                    derivative instead of derivee_sigma and rapport_sigma.
+                    derivative instead of derivee_sigma and rapport_sigma in order
+                    to obtain the alpha(t) coefficient.
 
     function      : takes x and return -1/ x squared, i'm using it to calcualte
                     the Berry Phase as a simpson evaluation of its function.
@@ -351,13 +352,16 @@ for i in range(1,len(t_val)-1):
     derivee_sigma.append(  (sigma_width[i-1]- sigma_width[i+1])/(2*k) )
 derivee_sigma.append(0)
 
+rapport_sigma.append(0)
 for i in range(1,len(t_val)-1):
     rapport_sigma.append( derivee_sigma[i-1]/(2*sigma_width[i]) )
+rapport_sigma.append(0)
 
 autre_derivee.append(0)
 for i in range(1,len(t_val)-1):
     autre_derivee.append( 0.5 *  ( np.log(sigma_width[i-1])- np.log(sigma_width[i+1]))/(2*k)     )
 autre_derivee.append(0)
+
 
 
 
@@ -556,9 +560,9 @@ for k in range(len(t_val)):
     axs[1,0].set_title('Potential well oscillation')
     axs[1,0].set_ylabel(' ')
     axs[1,0].set_xlabel('time $t$ in s')
-    axs[1,0].plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]              , color='black' , label = 'potential'               )
-    axs[1,0].plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]             , ls=dashed , color='green' , label = 'fit'                     )
-    axs[1,0].plot(t_val[k]         , (2+np.cos(omega*t_val[k]))*0.5                       , 'ro'      , color='red'   , label = 'instantaneous potential' )
+    axs[1,0].plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green' , label = 'fit'                     )
+    axs[1,0].plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='black' , label = 'potential'               )
+    axs[1,0].plot(t_val[k]         , (2+np.cos(omega*t_val[k]))*0.5                       , 'ro'  , color='red'   , label = 'instantaneous potential' )
     axs[1,0].legend(loc="upper right", prop={'size': 9})
 
     '''======================================================================'''
@@ -624,6 +628,7 @@ for k in range(len(t_val)):
     axs[2,1].set_ylabel(' ')
     axs[2,1].set_xlabel('time $t$ in s')
     axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
+    axs[2,1].plot(t_val[1:len(t_val)-1], rapport_sigma[1:len(t_val)-1], color='green'  , label ='$alpha(t)$'  )########## important
 
     """
     if k==0 or k>len(t_val)-2:
