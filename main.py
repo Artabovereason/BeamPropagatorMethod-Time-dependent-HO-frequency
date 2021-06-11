@@ -1,13 +1,19 @@
 import numpy as np
+from numpy import trapz
+
+import seaborn as sns
+sns.set()
 import time
 import matplotlib.pyplot as plt
 import os
 import imageio
-import scipy.signal
 import math
+
+import scipy.signal
 from scipy.integrate import simps
-from numpy import trapz
+from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
+
 start = time.clock()
 
 """
@@ -65,7 +71,7 @@ Some arrays are also defined here:
 """
 
 h       = 0.01
-k       = 0.001
+k       = 0.05
 x_range = (-4,4)
 n       = int((x_range[1]- x_range[0])/h)+1
 lam     = (1j*k)/(4*(h**2))
@@ -76,7 +82,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 10 #nombre periode
+ntp     = 50 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -355,12 +361,12 @@ derivee_sigma.append(0)
 
 rapport_sigma.append(0)
 for i in range(1,len(t_val)-1):
-    rapport_sigma.append( derivee_sigma[i-1]/(2*sigma_width[i]) )
+    rapport_sigma.append( derivee_sigma[i]/(2*sigma_width[i]) )
 rapport_sigma.append(0)
 
 autre_derivee.append(0)
 for i in range(1,len(t_val)-1):
-    autre_derivee.append( 0.5 *  ( np.log(sigma_width[i-1])- np.log(sigma_width[i+1]))/(2*k)     )
+    autre_derivee.append(  ( np.log(sigma_width[i-1])- np.log(sigma_width[i+1]))/(k)     )
 autre_derivee.append(0)
 
 
@@ -495,14 +501,26 @@ for i in range(len(t_val)):
 
 
 for i in range(len(t_val)):
-    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+1j* sigma_width[i]*derivee_sigma[i]*2*quatriem_moyenne[i]+1j* sigma_width[i]*derivee_sigma[i] ) ) )
+    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+1j*sigma_width[i]*derivee_sigma[i]*2*quatriem_moyenne[i]+1j*sigma_width[i]*derivee_sigma[i] ) ) )
 
 derivee_moyenne_I.append(0)
 for i in range(1,len(t_val)-1):
     derivee_moyenne_I.append((valeur_moyenne_I[i-1]-valeur_moyenne_I[i+1])/(2*k))
 derivee_moyenne_I.append(0)
+'''=========================================================================='''
+"""
+interp_derivative = []
+yhat              = scipy.signal.savgol_filter(sigma_width, 51, 2)
+
+interp_derivative.append(0)
+for i in range(1,len(t_val)-1):
+    interp_derivative.append( 0.5 *  ( np.log(yhat[i-1])- np.log(yhat[i+1]))/(2*k)     )
+interp_derivative.append(0)
 
 
+
+"""
+'''=========================================================================='''
 """
     coordonnee_temps : analogous to t_val but with lot's of precision
 """
@@ -534,6 +552,7 @@ axs[0,0].set_title('Width of the Gaussian function')
 axs[0,0].set_ylabel(' ')
 axs[0,0].set_xlabel('time $t$ in s')
 axs[0,0].plot(t_val    , sigma_width           , color='blue' , label= 'width'               ) #
+#axs[0,0].plot(t_val    , yhat           , color='red' , label= 'interp'               ) #
 axs[0,0].legend(loc="upper right", prop={'size': 9})
 '''=========================================================================='''
 ''' axs[0,1]
@@ -620,7 +639,7 @@ axs[1,1].legend(loc="best", prop={'size': 9})
 | X |   |   |
 —————————————
 '''
-axs[2,0].set_title('Berry phase $beta=$%.3f' %berry_phase[k])
+axs[2,0].set_title('Berry phase')
 axs[2,0].set_ylabel('$beta(t)$ in degrees')
 axs[2,0].set_xlabel('time $t$ in s')
 axs[2,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
@@ -640,7 +659,8 @@ axs[2,1].set_title('alpha coefficient')
 axs[2,1].set_ylabel(' ')
 axs[2,1].set_xlabel('time $t$ in s')
 axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
-axs[2,1].plot(t_val[1:len(t_val)-1], rapport_sigma[1:len(t_val)-1], color='green'  , label ='$alpha(t)$'  )########## important
+#axs[2,1].plot(t_val[1:len(t_val)-1], rapport_sigma[1:len(t_val)-1], color='green'  , label ='$alpha(t)$'  )########## important
+#axs[2,1].plot(t_val[1:len(t_val)-1]    , interp_derivative[1:len(t_val)-1]     , color='red' , label= 'interp'               ) #
 
 """
 if k==0 or k>len(t_val)-2:
@@ -835,11 +855,7 @@ for k in range(len(t_val)):
     axs[2,1].plot(t_val[1:len(t_val)-1], rapport_sigma[1:len(t_val)-1], color='green'  , label ='$alpha(t)$'  )########## important
     axs[2,1].plot(t_val[1:len(t_val)-1], scipy.signal.medfilt(autre_derivee)[1:len(t_val)-1], color='red'  , label ='$alpha(t)$'  )########## important
 
-    """
-    if k==0 or k>len(t_val)-2:
-        print('')
-    else: axs[2,1].plot(t_val[k], rapport_sigma[k-1] ,'ro', color='red'   , label ='instantaneous' )
-    """
+
     axs[2,1].legend(loc="upper right", prop={'size': 9})
 
 
