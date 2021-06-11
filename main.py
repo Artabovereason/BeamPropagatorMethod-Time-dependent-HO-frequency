@@ -505,50 +505,35 @@ plt.rcParams["figure.figsize"] = (13,13) #taille de mon image
 
 # plot the line chart
 fig, axs = plt.subplots(3,3)
+gs = fig.add_gridspec(3, 3)
 st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize=20)
 
-'''======================================================================='''
-''' axs[0,0]
-—————————————
-| X |   |   |
-—————————————
-|   |   |   |
-—————————————
-|   |   |   |
-—————————————
-'''
-
-axs[0,0].set_title('Width of the Gaussian function')
-axs[0,0].set_ylabel(' ')
-axs[0,0].set_xlabel('time $t$ in s')
-axs[0,0].plot(t_val    , sigma_width           , color='blue' , label= 'width'               ) #
-axs[0,0].legend(loc="upper right", prop={'size': 9})
 '''=========================================================================='''
-''' axs[0,1]
+''' f_ax1
 —————————————
-|   | X |   |
+| XXXXXXXXX |
 —————————————
 |   |   |   |
 —————————————
 |   |   |   |
 —————————————
 '''
-axs[0,1].set_title('Energy fluctuation over time')
-axs[0,1].set_ylabel(' ')
-axs[0,1].set_xlabel('time $t$ in s')
-axs[0,1].plot(t_val    , Eigenvalue_stock          , color='black' , label = 'Eigen'               )
-axs[0,1].legend(loc="upper right", prop={'size': 9})
+f_ax1 = fig.add_subplot(gs[0, :])
+axs[0,0].set_xticks([], [])
+axs[0,0].set_yticks([], [])
+axs[0,1].set_xticks([], [])
+axs[0,1].set_yticks([], [])
+axs[0,2].set_xticks([], [])
+axs[0,2].set_yticks([], [])
 
-'''=========================================================================='''
-''' axs[0,2]
-—————————————
-|   |   | X |
-—————————————
-|   |   |   |
-—————————————
-|   |   |   |
-—————————————
-'''
+f_ax1.set_title('Total and potential energy fluctuations over time')
+f_ax1.set_ylabel(' ')
+f_ax1.set_xlabel('time $t$ in s')
+f_ax1.plot(t_val    , Eigenvalue_stock          , color='black' , label = 'total'               )
+f_ax1.plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green' , label = 'fit'                     )
+f_ax1.plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='blue' , label = 'potential'               )
+f_ax1.legend(loc="upper right", prop={'size': 9})
+
 
 '''======================================================================'''
 ''' axs[1,0]
@@ -560,13 +545,14 @@ axs[0,1].legend(loc="upper right", prop={'size': 9})
 |   |   |   |
 —————————————
 '''
+"""
 axs[1,0].set_title('Potential well oscillation')
 axs[1,0].set_ylabel(' ')
 axs[1,0].set_xlabel('time $t$ in s')
 axs[1,0].plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green' , label = 'fit'                     )
 axs[1,0].plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='black' , label = 'potential'               )
 axs[1,0].legend(loc="upper right", prop={'size': 9})
-
+"""
 '''======================================================================'''
 ''' axs[1,1]
 —————————————
@@ -577,7 +563,7 @@ axs[1,0].legend(loc="upper right", prop={'size': 9})
 |   |   |   |
 —————————————
 '''
-axs[1,1].set_title('$t=$%.3f' %t_val[0])
+axs[1,1].set_title('System representation at $t=$%.3f' %t_val[0])
 axs[1,1].set_ylabel(' ')
 axs[1,1].set_xlabel('space $x$')
 axs[1,1].plot(x, (2+np.cos(omega*t_val[0]))*(x**2)*0.5 , color='black' , label = 'potential'      )
@@ -596,6 +582,11 @@ axs[1,1].legend(loc="best", prop={'size': 9})
 |   |   |   |
 —————————————
 '''
+axs[1,2].set_title('Width of the Gaussian function through time')
+axs[1,2].set_ylabel(' ')
+axs[1,2].set_xlabel('time $t$ in s')
+axs[1,2].plot(t_val    , sigma_width           , color='blue' , label= 'width' )
+axs[1,2].legend(loc="upper right", prop={'size': 9})
 
 '''======================================================================'''
 ''' axs[2,0]
@@ -607,7 +598,7 @@ axs[1,1].legend(loc="best", prop={'size': 9})
 | X |   |   |
 —————————————
 '''
-axs[2,0].set_title('Berry phase')
+axs[2,0].set_title('Berry phase through time')
 axs[2,0].set_ylabel('$beta(t)$ in degrees')
 axs[2,0].set_xlabel('time $t$ in s')
 axs[2,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
@@ -623,7 +614,7 @@ axs[2,0].legend(loc="best", prop={'size': 9})
 —————————————
 '''
 
-axs[2,1].set_title('alpha coefficient')
+axs[2,1].set_title('alpha coefficient through time')
 axs[2,1].set_ylabel(' ')
 axs[2,1].set_xlabel('time $t$ in s')
 axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )
@@ -645,13 +636,13 @@ axs[2,1].legend(loc="upper right", prop={'size': 9})
 |   |   | X |
 —————————————
 '''
-axs[2,2].set_title('Invariant plot')
+axs[2,2].set_title('Invariant plot through time')
 axs[2,2].set_ylabel(' ')
 axs[2,2].set_ylim(0,3)
 axs[2,2].set_xlabel('time $t$ in s')
-axs[2,2].plot(t_val[2:len(t_val)-1] , Omega_invar[1:len(Omega_invar)]  , color='black'   , label = '$\Omega$'            )
-axs[2,2].plot(t_val[1:len(t_val)-1] , valeur_moyenne_I[1:len(t_val)-1] , color='red'     , label = '$I(t)$'              )
-axs[2,2].plot(t_val[1:len(t_val)-1] , mean_I[1:len(t_val)-1] , color='yellow'     , label = '$mean I(t)$'              )
+axs[2,2].plot(t_val[2:len(t_val)-1] , Omega_invar[1:len(Omega_invar)]  , color = 'black'   , label = '$\Omega$'                                     )
+axs[2,2].plot(t_val[1:len(t_val)-1] , valeur_moyenne_I[1:len(t_val)-1] , color = 'red'     , label = '$I(t)$'                                       )
+axs[2,2].plot(t_val[1:len(t_val)-1] , mean_I[1:len(t_val)-1]           , color = 'yellow'  , label = '$mean I(t)=$%.3f'%Average(valeur_moyenne_I  ) )
 axs[2,2].legend(loc="best", prop={'size': 9})
 
 
