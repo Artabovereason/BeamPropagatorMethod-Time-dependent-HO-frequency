@@ -3,6 +3,7 @@ from numpy import trapz
 
 import seaborn as sns
 sns.set(rc={'axes.facecolor':'whitesmoke'})
+#sns.set_context("poster")
 import time
 import matplotlib.pyplot as plt
 import os
