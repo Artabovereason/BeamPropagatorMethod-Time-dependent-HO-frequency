@@ -2,7 +2,7 @@ import numpy as np
 from numpy import trapz
 
 import seaborn as sns
-sns.set()
+sns.set(rc={'axes.facecolor':'whitesmoke'})
 import time
 import matplotlib.pyplot as plt
 import os
@@ -68,10 +68,13 @@ Some arrays are also defined here:
          x      : array to store the x-coordinate values
          y      : array to store psi(xi) at each xi
          t_val  : array to store all time-coordinate values
+
+
+        It is requiered to have lambda <=1.
 """
 
 h       = 0.01
-k       = 0.05
+k       = 0.004
 x_range = (-4,4)
 n       = int((x_range[1]- x_range[0])/h)+1
 lam     = (1j*k)/(4*(h**2))
@@ -82,7 +85,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 50 #nombre periode
+ntp     = 10 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -300,8 +303,6 @@ for i in t_val:
 C1_val = np.array([i for i in Coeff.values()] )
 C2_val = np.array([i for i in Coeff2.values()])
 
-#end = time.clock()
-#print('time taken to run the program is ',end-start,' seconds')
 '''=========================================================================='''
 '''
 Plot of the coefficient
@@ -353,7 +354,6 @@ for i in range(len(t_val)):
     else :
         berry_phase.append(simps( function(valeur_valeur[:i]) , t_val[:i] , dx=k ) )
 
-
 derivee_sigma.append(0)
 for i in range(1,len(t_val)-1):
     derivee_sigma.append(  (sigma_width[i-1]- sigma_width[i+1])/(2*k) )
@@ -368,8 +368,6 @@ autre_derivee.append(0)
 for i in range(1,len(t_val)-1):
     autre_derivee.append(  ( np.log(sigma_width[i-1])- np.log(sigma_width[i+1]))/(k)     )
 autre_derivee.append(0)
-
-
 
 
 '''=========================================================================='''
@@ -428,31 +426,7 @@ for i in range(int(len(t_val))):
     list_derivee_seconde.append(derivee_seconde_prems)
 
 for i in range(len(t_val)):
-    deuxieme_moyenne.append(  simps( np.conj(PSI_t[t_val[i]])* list_derivee_seconde[i]                      , x , dx=h )  )
-
-'''=========================================================================='''
-'''
-Moyenne de sigma x * dérivée sigma * dérivée par x
-
-    list_derivee_premiere : return the derivative relative to x of psi
-'''
-"""
-troisiem_moyenne      = []
-troisiem_nouvelle_var = []
-list_derivee_premiere = []
-
-for i in range(int(len(t_val))):
-    derivee_premiere_prems = []
-    derivee_premiere_prems.append(0)
-    for w in range(int(1),int(len(x)-1)):
-        derivee_premiere_prems.append( (PSI_t[t_val[i]][int(w-1)]-PSI_t[t_val[i]][int(w+1)])/(2*h)    )
-    derivee_premiere_prems.append(0)
-    list_derivee_premiere.append(derivee_premiere_prems)
-
-for i in range(len(t_val)):
-    troisiem_moyenne.append(  simps( 1j*np.conj(PSI_t[t_val[i]])*sigma_width[i]*derivee_sigma[i]*x[i]* list_derivee_premiere[i]                     , x , dx=h )  )
-
-"""
+    deuxieme_moyenne.append(  simps( np.conj(PSI_t[t_val[i]])* list_derivee_seconde[i] , x , dx=h )  )
 
 '''=========================================================================='''
 '''
@@ -479,47 +453,43 @@ derivee_x_derivee_sigma.append(0)
 
 for i in range(int(len(t_val))):
     valeur_tampon = []
-
     for w in range(int(len(x))):
         if w==0 or w==len(x)-1:
             valeur_tampon.append(0)
         else:
             valeur_tampon.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
-        #derivee_x_psi.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
-#    derivee_x_psi.append(0)
     derivee_x_psi.append(valeur_tampon)
-
-
-print(len(PSI_t))
-print(len(PSI_t[t_val[1]] ))
-print(len(derivee_x_psi[1] ))
 
 for i in range(len(t_val)):
     quatriem_moyenne.append( simps( np.conj(PSI_t[t_val[i]])*x[i]*derivee_x_psi[i], x , dx=h ))
 
+test_normalisation = []
+for i in range(len(t_val)):
+    test_normalisation.append( simps( np.conj(PSI_t[t_val[i]])*PSI_t[t_val[i]], x , dx=h ))
 
 
 
 for i in range(len(t_val)):
-    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+1j*sigma_width[i]*derivee_sigma[i]*2*quatriem_moyenne[i]+1j*sigma_width[i]*derivee_sigma[i] ) ) )
+    valeur_moyenne_I.append(np.real(0.5*(premiere_moyenne[i] - deuxieme_moyenne[i]+1j*sigma_width[i]*derivee_sigma[i]*2*quatriem_moyenne[i]+1j*sigma_width[i]*derivee_sigma[i]*test_normalisation[i] ) ) )
 
 derivee_moyenne_I.append(0)
 for i in range(1,len(t_val)-1):
     derivee_moyenne_I.append((valeur_moyenne_I[i-1]-valeur_moyenne_I[i+1])/(2*k))
 derivee_moyenne_I.append(0)
 '''=========================================================================='''
-"""
-interp_derivative = []
-yhat              = scipy.signal.savgol_filter(sigma_width, 51, 2)
 
-interp_derivative.append(0)
-for i in range(1,len(t_val)-1):
-    interp_derivative.append( 0.5 *  ( np.log(yhat[i-1])- np.log(yhat[i+1]))/(2*k)     )
-interp_derivative.append(0)
+def Average(lst):
+    return sum(lst) / len(lst)
+mean_I  = []
+mean_dI = []
+for i in range(len(t_val)):
+    mean_I.append(Average(valeur_moyenne_I   ))
+    mean_dI.append(Average(derivee_moyenne_I ))
+
+print('Valeur moyenne de I=%.3f'  %Average(valeur_moyenne_I  ))
+print('Valeur moyenne de dI=%.3f' %Average(derivee_moyenne_I ))
 
 
-
-"""
 '''=========================================================================='''
 """
     coordonnee_temps : analogous to t_val but with lot's of precision
@@ -552,7 +522,6 @@ axs[0,0].set_title('Width of the Gaussian function')
 axs[0,0].set_ylabel(' ')
 axs[0,0].set_xlabel('time $t$ in s')
 axs[0,0].plot(t_val    , sigma_width           , color='blue' , label= 'width'               ) #
-#axs[0,0].plot(t_val    , yhat           , color='red' , label= 'interp'               ) #
 axs[0,0].legend(loc="upper right", prop={'size': 9})
 '''=========================================================================='''
 ''' axs[0,1]
@@ -611,9 +580,8 @@ axs[1,0].legend(loc="upper right", prop={'size': 9})
 axs[1,1].set_title('$t=$%.3f' %t_val[0])
 axs[1,1].set_ylabel(' ')
 axs[1,1].set_xlabel('space $x$')
-axs[1,1].plot(x, (2+np.cos(omega*t_val[0]))*(x**2)*0.5            , color='black' , label ='potential')
-#axs[1,1].plot(x, [V(i,k) for i in x]            , color='black' , label ='potential')
-axs[1,1].plot(x, np.absolute(PSI_t[t_val[0]])   , color='red'   , label ='wavefunction gs')
+axs[1,1].plot(x, (2+np.cos(omega*t_val[0]))*(x**2)*0.5 , color='black' , label = 'potential'      )
+axs[1,1].plot(x, np.absolute(PSI_t[t_val[0]])          , color='red'   , label = 'wavefunction gs')
 axs[1,1].set_ylim(-0.5,2.5)
 axs[1,1].legend(loc="best", prop={'size': 9})
 
@@ -658,10 +626,7 @@ axs[2,0].legend(loc="best", prop={'size': 9})
 axs[2,1].set_title('alpha coefficient')
 axs[2,1].set_ylabel(' ')
 axs[2,1].set_xlabel('time $t$ in s')
-axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )########## important
-#axs[2,1].plot(t_val[1:len(t_val)-1], rapport_sigma[1:len(t_val)-1], color='green'  , label ='$alpha(t)$'  )########## important
-#axs[2,1].plot(t_val[1:len(t_val)-1]    , interp_derivative[1:len(t_val)-1]     , color='red' , label= 'interp'               ) #
-
+axs[2,1].plot(t_val[1:len(t_val)-1], autre_derivee[1:len(t_val)-1], color='black'  , label ='$alpha(t)$'  )
 """
 if k==0 or k>len(t_val)-2:
     print('')
@@ -682,11 +647,13 @@ axs[2,1].legend(loc="upper right", prop={'size': 9})
 '''
 axs[2,2].set_title('Invariant plot')
 axs[2,2].set_ylabel(' ')
+axs[2,2].set_ylim(0,3)
 axs[2,2].set_xlabel('time $t$ in s')
-axs[2,2].plot(t_val[2:len(t_val)-1], Omega_invar[1:len(Omega_invar)]   , color='black'   , label = '$\Omega$'            )
-axs[2,2].plot(t_val[1:len(t_val)-1], valeur_moyenne_I[1:len(t_val)-1]  , color='red'     , label = '$I(t)$' )
-#axs[2,2].plot(t_val[1:len(t_val)-1], derivee_moyenne_I[1:len(t_val)-1] , color='green'   , label = '$dI$' )
+axs[2,2].plot(t_val[2:len(t_val)-1] , Omega_invar[1:len(Omega_invar)]  , color='black'   , label = '$\Omega$'            )
+axs[2,2].plot(t_val[1:len(t_val)-1] , valeur_moyenne_I[1:len(t_val)-1] , color='red'     , label = '$I(t)$'              )
+axs[2,2].plot(t_val[1:len(t_val)-1] , mean_I[1:len(t_val)-1] , color='yellow'     , label = '$mean I(t)$'              )
 axs[2,2].legend(loc="best", prop={'size': 9})
+
 
 '''======================================================================'''
 plt.subplots_adjust(
@@ -698,7 +665,7 @@ plt.subplots_adjust(
                     hspace=0.3 # 0.7
                     )
 
-filename = 'print.png'
+filename = 'omega=%.3f'%omega+' period=%.3f'%ntp+'stepx=%.3f'%h+'stept=%.3f'%k+'.png'
 
 
     # save frame
