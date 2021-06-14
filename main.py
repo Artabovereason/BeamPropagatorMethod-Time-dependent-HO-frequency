@@ -74,10 +74,10 @@ Some arrays are also defined here:
         It is requiered to have lambda <=1.
 """
 
-h       = 0.01
-k       = 0.004
-x_range = (-4,4)
-n       = int((x_range[1]- x_range[0])/h)+1
+h       = 0.01   # 0.01
+k       = 0.004  # 0.004
+x_range = (-4,4) #(-4,4)
+n       = int((x_range[1]- x_range[0])/(h))+1
 lam     = (1j*k)/(4*(h**2))
 omega   = float(input('Enter the value of omega : '))
 
@@ -86,7 +86,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 10 #nombre periode
+ntp     = 3 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -461,8 +461,10 @@ for i in range(int(len(t_val))):
             valeur_tampon.append( (PSI_t[t_val[i]][w-1]-PSI_t[t_val[i]][w+1])/(2*h)  )
     derivee_x_psi.append(valeur_tampon)
 
+
 for i in range(len(t_val)):
-    quatriem_moyenne.append( simps( np.conj(PSI_t[t_val[i]])*x[i]*derivee_x_psi[i], x , dx=h ))
+    quatriem_moyenne.append( simps( np.conj(PSI_t[t_val[i]])*x*derivee_x_psi[i], x , dx=h ))
+
 
 test_normalisation = []
 for i in range(len(t_val)):
@@ -489,6 +491,14 @@ for i in range(len(t_val)):
 
 print('Valeur moyenne de I=%.3f'  %Average(valeur_moyenne_I  ))
 print('Valeur moyenne de dI=%.3f' %Average(derivee_moyenne_I ))
+'''=========================================================================='''
+'''list for energy and potential'''
+
+energy_potential = [(2+np.cos(omega*w))*0.5 for w in t_val]
+
+anaologous_action = []
+for i in range(len(t_val)):
+    anaologous_action.append(Eigenvalue_stock[i]/energy_potential[i])
 
 
 '''=========================================================================='''
@@ -496,6 +506,45 @@ print('Valeur moyenne de dI=%.3f' %Average(derivee_moyenne_I ))
     coordonnee_temps : analogous to t_val but with lot's of precision
 """
 coordonnee_temps = np.linspace(t_val[0],t_val[int(len(t_val)-1)],5000)
+
+
+'''=========================================================================='''
+'''
+Mean value of H : <H>
+'''
+
+list_derivee_seconde_only = []
+for i in range(int(len(t_val))):
+    derivee_seconde_prems = []
+    derivee_seconde_prems.append(0)
+    for w in range(int(1),int(len(x)-1)):
+        derivee_seconde_prems.append( -0.5*(PSI_t[t_val[i]][int(w-1)]-2*PSI_t[t_val[i]][w]+PSI_t[t_val[i]][int(w+1)])/(h*h)    )
+    derivee_seconde_prems.append(0)
+    list_derivee_seconde_only.append(derivee_seconde_prems)
+
+energy_moyenne = []
+
+for i in range(len(t_val)):
+    energy_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* (list_derivee_seconde_only[i]+(2+np.cos(omega*t_val[i]))*(x**2)/2)* PSI_t[t_val[i]] , x , dx=h ) )
+
+
+test_valeur = []
+for i in range(len(t_val)):
+    test_valeur.append(energy_moyenne[i]/( simps( np.conj(PSI_t[t_val[i]])*(2+np.cos(omega*t_val[i]))*(x**2)*0.5* PSI_t[t_val[i]] , x , dx=h )  ) )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 '''=========================================================================='''
 '''
@@ -532,9 +581,11 @@ f_ax1.set_ylabel(' ')
 f_ax1.set_xlabel('time $t$ in s')
 f_ax1.plot(t_val    , Eigenvalue_stock          , color='black' , label = 'total'               )
 f_ax1.plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green' , label = 'fit'                     )
-f_ax1.plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='blue' , label = 'potential'               )
+f_ax1.plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='blue' , label = 'potential'                )
+f_ax1.plot(t_val            , energy_moyenne                     , color='yellow' , label = 'total'                )
+f_ax1.plot(t_val            , test_valeur                     , color='purple' , label = 'I(t)'                )
+#f_ax1.plot(t_val            ,    anaologous_action         , color='red' , label = 'action'               )
 f_ax1.legend(loc="upper right", prop={'size': 9})
-
 
 '''======================================================================'''
 ''' axs[1,0]
