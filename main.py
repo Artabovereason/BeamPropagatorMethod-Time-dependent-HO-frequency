@@ -74,9 +74,9 @@ Some arrays are also defined here:
         It is requiered to have lambda <=1.
 """
 
-h       = 0.01   # 0.01
-k       = 0.004  # 0.004
-x_range = (-4,4) #(-4,4)
+h       = 0.01    # 0.01
+k       = 0.004   # 0.004
+x_range = (-3,3) #(-4,4)
 n       = int((x_range[1]- x_range[0])/(h))+1
 lam     = (1j*k)/(4*(h**2))
 omega   = float(input('Enter the value of omega : '))
@@ -86,7 +86,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 3 #nombre periode
+ntp     = 1 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -162,6 +162,7 @@ def Eigen():
 Psi_gs = {}
 Eigenvalue_stock = []
 for t in t_val:
+    print((t)*100/max(t_val) )
     Eigenvalue = Eigen()[0]
     Eigenvalue_stock.append(Eigen()[0])
     Psi_gs[t] = Psi(Eigenvalue)[1]
@@ -523,27 +524,44 @@ for i in range(int(len(t_val))):
     list_derivee_seconde_only.append(derivee_seconde_prems)
 
 energy_moyenne = []
-
 for i in range(len(t_val)):
-    energy_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* (list_derivee_seconde_only[i]+(2+np.cos(omega*t_val[i]))*(x**2)/2)* PSI_t[t_val[i]] , x , dx=h ) )
+    energy_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* list_derivee_seconde_only[i]+ np.conj(PSI_t[t_val[i]] )* (2+np.cos(omega*t_val[i]))*(x**2)*0.5* PSI_t[t_val[i]] , x , dx=h ) )
 
-
-test_valeur = []
+autretest_valeur = []
 for i in range(len(t_val)):
-    test_valeur.append(energy_moyenne[i]/( simps( np.conj(PSI_t[t_val[i]])*(2+np.cos(omega*t_val[i]))*(x**2)*0.5* PSI_t[t_val[i]] , x , dx=h )  ) )
+    autretest_valeur.append(energy_moyenne[i]/( np.sqrt( (2+np.cos(omega*t_val[i]))) )  )
+
+normalisation_liste = []
+for i in range(int(len(t_val))):
+    normalisation_liste.append( simps( np.conj(PSI_t[t_val[i]])*PSI_t[t_val[i]] , x , dx=h )  )
+print(Average(normalisation_liste) )
 
 
+adiabatic_coefficient = []
+adiabatic_coefficient.append(0)
+for i in range(1,int(len(t_val))-1):
+    adiabatic_coefficient.append( ( np.sqrt(2+np.cos(omega*t_val[i-1]))-np.sqrt(2+np.cos(omega*t_val[i+1])) )/((2+np.cos(omega*t_val[i]))*2*k) )
+adiabatic_coefficient.append(0)
 
+print(max(adiabatic_coefficient))
+print(min(adiabatic_coefficient))
 
+'''=========================================================================='''
+'''
+    omega = 1.00                    max(adiabatic_coefficient) = 0.242
+    omega = 2.50                    max(adiabatic_coefficient) = 0.605
+    omega = 5.00                    max(adiabatic_coefficient) = 1.211
+    omega = 7.50                    max(adiabatic_coefficient) = 1.816
+    omega = 10.0                    max(adiabatic_coefficient) = 2.420
+    omega = 25.0                    max(adiabatic_coefficient) = 6.036
+    omega = 50.0                    max(adiabatic_coefficient) = 11.94
+    omega = 75.0                    max(adiabatic_coefficient) = 17.41
+    omega = 100                     max(adiabatic_coefficient) = 22.77
 
+    We can suppose the relation :
+    max(adiabatic_coefficient)=0.242 * omega
 
-
-
-
-
-
-
-
+'''
 
 
 '''=========================================================================='''
@@ -579,12 +597,12 @@ axs[0,2].set_yticks([], [])
 f_ax1.set_title('Total and potential energy fluctuations over time')
 f_ax1.set_ylabel(' ')
 f_ax1.set_xlabel('time $t$ in s')
-f_ax1.plot(t_val    , Eigenvalue_stock          , color='black' , label = 'total'               )
-f_ax1.plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green' , label = 'fit'                     )
-f_ax1.plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='blue' , label = 'potential'                )
-f_ax1.plot(t_val            , energy_moyenne                     , color='yellow' , label = 'total'                )
-f_ax1.plot(t_val            , test_valeur                     , color='purple' , label = 'I(t)'                )
-#f_ax1.plot(t_val            ,    anaologous_action         , color='red' , label = 'action'               )
+f_ax1.plot(t_val            , Eigenvalue_stock                                             , color='black'      , label = 'Eigenvalue' )
+f_ax1.plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green'      , label = 'fit'        )
+f_ax1.plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='blue'       , label = 'potential'  )
+f_ax1.plot(t_val            , energy_moyenne                                               , color='aquamarine' , label = '<$H$>'      )
+f_ax1.plot(t_val            , autretest_valeur                                             , color='orange'     , label = 'I(t)'       )
+f_ax1.plot(t_val            , adiabatic_coefficient                                         , color='yellow'     , label = 'Adiabatic coefficient=%.3f' %max(adiabatic_coefficient)      )
 f_ax1.legend(loc="upper right", prop={'size': 9})
 
 '''======================================================================'''
