@@ -86,7 +86,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 1 #nombre periode
+ntp     = 3 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -548,6 +548,8 @@ print(min(adiabatic_coefficient))
 
 '''=========================================================================='''
 '''
+
+    omega = 0.10                    max(adiabatic_coefficient) = 0.024
     omega = 1.00                    max(adiabatic_coefficient) = 0.242
     omega = 2.50                    max(adiabatic_coefficient) = 0.605
     omega = 5.00                    max(adiabatic_coefficient) = 1.211
@@ -602,7 +604,7 @@ f_ax1.plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps
 f_ax1.plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='blue'       , label = 'potential'  )
 f_ax1.plot(t_val            , energy_moyenne                                               , color='aquamarine' , label = '<$H$>'      )
 f_ax1.plot(t_val            , autretest_valeur                                             , color='orange'     , label = 'I(t)'       )
-f_ax1.plot(t_val            , adiabatic_coefficient                                         , color='yellow'     , label = 'Adiabatic coefficient=%.3f' %max(adiabatic_coefficient)      )
+#f_ax1.plot(t_val            , adiabatic_coefficient                                         , color='yellow'     , label = 'Adiabatic coefficient=%.3f' %max(adiabatic_coefficient)      )
 f_ax1.legend(loc="upper right", prop={'size': 9})
 
 '''======================================================================'''
