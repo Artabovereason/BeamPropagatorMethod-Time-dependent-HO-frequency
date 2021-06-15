@@ -76,7 +76,7 @@ Some arrays are also defined here:
 
 h       = 0.01    # 0.01
 k       = 0.004   # 0.004
-x_range = (-3,3) #(-4,4)
+x_range = (-4,4) #(-4,4)
 n       = int((x_range[1]- x_range[0])/(h))+1
 lam     = (1j*k)/(4*(h**2))
 omega   = float(input('Enter the value of omega : '))
@@ -86,7 +86,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 3 #nombre periode
+ntp     = 1 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -96,8 +96,6 @@ print('number of time steps = ',len(t_val))
 """
 Here we define the time-dependent potential V(x,t).
 Here x implies position and t implies time.
-The constants dist, epsilon and gamma are given according
-to the potential as discussed in report.
 
 If a different potential is to be studied change b to the
 potential of interest.
@@ -543,8 +541,8 @@ for i in range(1,int(len(t_val))-1):
     adiabatic_coefficient.append( ( np.sqrt(2+np.cos(omega*t_val[i-1]))-np.sqrt(2+np.cos(omega*t_val[i+1])) )/((2+np.cos(omega*t_val[i]))*2*k) )
 adiabatic_coefficient.append(0)
 
-print(max(adiabatic_coefficient))
-print(min(adiabatic_coefficient))
+#print(max(adiabatic_coefficient))
+#print(min(adiabatic_coefficient))
 
 '''=========================================================================='''
 '''
@@ -565,6 +563,20 @@ print(min(adiabatic_coefficient))
 
 '''
 
+list_adiabatic_coefficient = [0.024 , 0.242 , 0.605 , 1.211 , 1.816 , 2.420 , 6.036 , 11.94 , 17.41 , 22.77]
+list_frequency_omega       = [0.1   , 1.0   , 2.5   , 5.0   , 7.5   , 10    , 25    , 50    , 75    , 100  ]
+'''=========================================================================='''
+"""
+print(valeur_moyenne_I[0])
+print(valeur_moyenne_I[1])
+print(valeur_moyenne_I[2])
+print(autretest_valeur[0])
+print(Average(autretest_valeur))
+"""
+rapport_invariant =(Average(autretest_valeur) / Average(valeur_moyenne_I) ).real
+print("Rapport des deux invariant =%.4f " %rapport_invariant )
+print("Moyenne <H>/w=%.3f" %Average(autretest_valeur).real )
+print("Moyenne I(t)=%.3f" %Average(valeur_moyenne_I).real )
 
 '''=========================================================================='''
 '''
@@ -603,7 +615,6 @@ f_ax1.plot(t_val            , Eigenvalue_stock                                  
 f_ax1.plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green'      , label = 'fit'        )
 f_ax1.plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='blue'       , label = 'potential'  )
 f_ax1.plot(t_val            , energy_moyenne                                               , color='aquamarine' , label = '<$H$>'      )
-f_ax1.plot(t_val            , autretest_valeur                                             , color='orange'     , label = 'I(t)'       )
 #f_ax1.plot(t_val            , adiabatic_coefficient                                         , color='yellow'     , label = 'Adiabatic coefficient=%.3f' %max(adiabatic_coefficient)      )
 f_ax1.legend(loc="upper right", prop={'size': 9})
 
@@ -617,14 +628,13 @@ f_ax1.legend(loc="upper right", prop={'size': 9})
 |   |   |   |
 —————————————
 '''
-"""
-axs[1,0].set_title('Potential well oscillation')
+
+axs[1,0].set_title('Adiabatic coefficient')
 axs[1,0].set_ylabel(' ')
-axs[1,0].set_xlabel('time $t$ in s')
-axs[1,0].plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green' , label = 'fit'                     )
-axs[1,0].plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='black' , label = 'potential'               )
-axs[1,0].legend(loc="upper right", prop={'size': 9})
-"""
+axs[1,0].set_xlabel('Frequency $\omega$')
+axs[1,0].plot(list_frequency_omega , list_adiabatic_coefficient  , color='blue'                    )
+#axs[1,0].legend(loc="upper right", prop={'size': 9})
+
 '''======================================================================'''
 ''' axs[1,1]
 —————————————
@@ -715,6 +725,7 @@ axs[2,2].set_xlabel('time $t$ in s')
 axs[2,2].plot(t_val[2:len(t_val)-1] , Omega_invar[1:len(Omega_invar)]  , color = 'black'   , label = '$\Omega$'                                     )
 axs[2,2].plot(t_val[1:len(t_val)-1] , valeur_moyenne_I[1:len(t_val)-1] , color = 'red'     , label = '$I(t)$'                                       )
 axs[2,2].plot(t_val[1:len(t_val)-1] , mean_I[1:len(t_val)-1]           , color = 'yellow'  , label = '$mean I(t)=$%.3f'%Average(valeur_moyenne_I  ) )
+axs[2,2].plot(t_val                 , autretest_valeur                 , color='orange'    , label = 'I(t)'                                         )
 axs[2,2].legend(loc="best", prop={'size': 9})
 
 
@@ -732,7 +743,7 @@ filename = 'omega=%.3f'%omega+' period=%.3f'%ntp+'stepx=%.3f'%h+'stept=%.3f'%k+'
 
 
     # save frame
-plt.savefig(filename)
+plt.savefig(filename,transparent=True)
 plt.close()
 
 
