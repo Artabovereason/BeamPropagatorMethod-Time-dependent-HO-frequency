@@ -86,7 +86,7 @@ y       = np.zeros(n)
 z       = 0.000001
 y[1]    = z*h
 
-ntp     = 1 #nombre periode
+ntp     = 2 #nombre periode
 tsteps  = time_steps(ntp,k,omega)
 t_val   = tsteps.t_val()
 print('number of time steps = ',len(t_val))
@@ -153,6 +153,7 @@ def Eigen():
                     else:
                         high = mid
             Eigenvalues.append(mid)
+
     return Eigenvalues
 
 '''=========================================================================='''
@@ -162,7 +163,9 @@ Eigenvalue_stock = []
 for t in t_val:
     print((t)*100/max(t_val) )
     Eigenvalue = Eigen()[0]
+    print((t)*100/max(t_val) )
     Eigenvalue_stock.append(Eigen()[0])
+    print((t)*100/max(t_val) )
     Psi_gs[t] = Psi(Eigenvalue)[1]
     #print('Psi_ground_state at t = ',t,' generated with eigenvalue = ',Eigenvalue)
 print('All Psi_gs generated')
@@ -546,7 +549,6 @@ adiabatic_coefficient.append(0)
 
 '''=========================================================================='''
 '''
-
     omega = 0.10                    max(adiabatic_coefficient) = 0.024
     omega = 1.00                    max(adiabatic_coefficient) = 0.242
     omega = 2.50                    max(adiabatic_coefficient) = 0.605
@@ -561,18 +563,20 @@ adiabatic_coefficient.append(0)
     We can suppose the relation :
     max(adiabatic_coefficient)=0.242 * omega
 
+    list_adiabatic_coefficient : list of the adiabatic coefficient as mentionned before
+    list_frequency_omega       : list of the frequencies omega as mentionned before
+
 '''
 
 list_adiabatic_coefficient = [0.024 , 0.242 , 0.605 , 1.211 , 1.816 , 2.420 , 6.036 , 11.94 , 17.41 , 22.77]
 list_frequency_omega       = [0.1   , 1.0   , 2.5   , 5.0   , 7.5   , 10    , 25    , 50    , 75    , 100  ]
+
 '''=========================================================================='''
-"""
-print(valeur_moyenne_I[0])
-print(valeur_moyenne_I[1])
-print(valeur_moyenne_I[2])
-print(autretest_valeur[0])
-print(Average(autretest_valeur))
-"""
+'''
+    rapport_invariant is defined as the quotient of the <H>/w / I(t)
+
+    It is supposely tending to 1 as the adiabatic coefficient tend to 0.
+'''
 rapport_invariant =(Average(autretest_valeur) / Average(valeur_moyenne_I) ).real
 print("Rapport des deux invariant =%.4f " %rapport_invariant )
 print("Moyenne <H>/w=%.3f" %Average(autretest_valeur).real )
@@ -580,18 +584,20 @@ print("Moyenne I(t)=%.3f" %Average(valeur_moyenne_I).real )
 
 '''=========================================================================='''
 '''
-.png creation
+    This whole section is dedicated to the .png creation,
+    plot are enhanced with the package seaborn, see https://seaborn.pydata.org/
+    for more informations.
 '''
 
-plt.rcParams["figure.figsize"] = (13,13) #taille de mon image
+plt.rcParams["figure.figsize"] = (13,13)             #size of the output picture
 
 # plot the line chart
-fig, axs = plt.subplots(3,3)
-gs = fig.add_gridspec(3, 3)
-st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize=20)
+fig, axs = plt.subplots(3,3)      #define the picture to be a grid of 3*3
+gs       = fig.add_gridspec(3, 3) # i don't know
+st       = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\omega$=%.2f"%omega +" over %.1f period"  %ntp, fontsize=20) # name the whole 3*3 plot by a big suptitle
 
 '''=========================================================================='''
-''' f_ax1
+''' the name to plot here is : f_ax1
 —————————————
 | XXXXXXXXX |
 —————————————
@@ -599,8 +605,21 @@ st = fig.suptitle("Quantum Harmonic Oscillator with time-dependent frequency, $\
 —————————————
 |   |   |   |
 —————————————
+
+    Eigenvalue : the plot of the eigenvalues of the system
+    <H>        : mean value of the energy
+    fit        : correct theory potential energy
+    potential  : numerical plot of the potential
+
+It is intended that fit en potential tend to the same curve.
+But, eigenvalue and <H> could differ in some cases.
+
 '''
-f_ax1 = fig.add_subplot(gs[0, :])
+f_ax1 = fig.add_subplot(gs[0, :]) # used to make a big plot of 3 colon-wide
+'''
+    This whole section allows the grid [0,0], [0,1] and [0,2] to be unseen and
+    only the f_ax1 to be seen.
+'''
 axs[0,0].set_xticks([], [])
 axs[0,0].set_yticks([], [])
 axs[0,1].set_xticks([], [])
@@ -612,14 +631,13 @@ f_ax1.set_title('Total and potential energy fluctuations over time')
 f_ax1.set_ylabel(' ')
 f_ax1.set_xlabel('time $t$ in s')
 f_ax1.plot(t_val            , Eigenvalue_stock                                             , color='black'      , label = 'Eigenvalue' )
+f_ax1.plot(t_val            , energy_moyenne                                               , color='aquamarine' , label = '<$H$>'      )
 f_ax1.plot(coordonnee_temps , [(2+np.cos(omega*w))*0.5 for w in coordonnee_temps]  , '--'  , color='green'      , label = 'fit'        )
 f_ax1.plot(t_val            , [(2+np.cos(omega*w))*0.5 for w in t_val]                     , color='blue'       , label = 'potential'  )
-f_ax1.plot(t_val            , energy_moyenne                                               , color='aquamarine' , label = '<$H$>'      )
-#f_ax1.plot(t_val            , adiabatic_coefficient                                         , color='yellow'     , label = 'Adiabatic coefficient=%.3f' %max(adiabatic_coefficient)      )
 f_ax1.legend(loc="upper right", prop={'size': 9})
 
 '''======================================================================'''
-''' axs[1,0]
+''' the name to plot here is : axs[1,0]
 —————————————
 |   |   |   |
 —————————————
@@ -627,16 +645,18 @@ f_ax1.legend(loc="upper right", prop={'size': 9})
 —————————————
 |   |   |   |
 —————————————
+
+This plot will always be the same, since it's based on static array,
+it is used to show how-adiabatic our case is.
 '''
 
 axs[1,0].set_title('Adiabatic coefficient')
 axs[1,0].set_ylabel(' ')
 axs[1,0].set_xlabel('Frequency $\omega$')
-axs[1,0].plot(list_frequency_omega , list_adiabatic_coefficient  , color='blue'                    )
-#axs[1,0].legend(loc="upper right", prop={'size': 9})
+axs[1,0].plot(list_frequency_omega , list_adiabatic_coefficient  , color='blue' )
 
 '''======================================================================'''
-''' axs[1,1]
+''' the name to plot here is : axs[1,1]
 —————————————
 |   |   |   |
 —————————————
@@ -644,6 +664,12 @@ axs[1,0].plot(list_frequency_omega , list_adiabatic_coefficient  , color='blue' 
 —————————————
 |   |   |   |
 —————————————
+
+    potential       : plot a representative of the potential well acting on the wavefunction
+    wavefunction gs : wavefunction groundstate representation
+
+The main idea here is to show at t=0 the situation. A gif could be outputed to
+see the evolution through time but it is not time-efficient.
 '''
 axs[1,1].set_title('System representation at $t=$%.3f' %t_val[0])
 axs[1,1].set_ylabel(' ')
@@ -653,9 +679,8 @@ axs[1,1].plot(x, np.absolute(PSI_t[t_val[0]])          , color='red'   , label =
 axs[1,1].set_ylim(-0.5,2.5)
 axs[1,1].legend(loc="best", prop={'size': 9})
 
-
 '''======================================================================'''
-''' axs[1,2]
+''' the name to plot here is : axs[1,2]
 —————————————
 |   |   |   |
 —————————————
@@ -663,6 +688,9 @@ axs[1,1].legend(loc="best", prop={'size': 9})
 —————————————
 |   |   |   |
 —————————————
+
+    sigma_width : widt of the gaussian through time
+
 '''
 axs[1,2].set_title('Width of the Gaussian function through time')
 axs[1,2].set_ylabel(' ')
@@ -671,7 +699,7 @@ axs[1,2].plot(t_val    , sigma_width           , color='blue' , label= 'width' )
 axs[1,2].legend(loc="upper right", prop={'size': 9})
 
 '''======================================================================'''
-''' axs[2,0]
+''' the name to plot here is : axs[2,0]
 —————————————
 |   |   |   |
 —————————————
@@ -679,12 +707,16 @@ axs[1,2].legend(loc="upper right", prop={'size': 9})
 —————————————
 | X |   |   |
 —————————————
+
+    berry_phase : plot the berry phase through time
 '''
+
 axs[2,0].set_title('Berry phase through time')
 axs[2,0].set_ylabel('$beta(t)$ in degrees')
 axs[2,0].set_xlabel('time $t$ in s')
 axs[2,0].plot(t_val   , berry_phase         , color='blue' , label ='phase'  )
 axs[2,0].legend(loc="best", prop={'size': 9})
+
 '''======================================================================'''
 ''' axs[2,1]
 —————————————
@@ -694,6 +726,11 @@ axs[2,0].legend(loc="best", prop={'size': 9})
 —————————————
 |   | X |   |
 —————————————
+
+    alpha(t) : plot the alpha coefficient defined as the quotient of the derivative
+    relative to time of sigma divided by sigma.
+
+This plot is pretty noisy, but on it can be seen a periodc
 '''
 
 axs[2,1].set_title('alpha coefficient through time')
