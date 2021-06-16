@@ -74,16 +74,16 @@ Some arrays are also defined here:
         It is requiered to have lambda <=1.
 """
 
-h       = 0.01    # 0.01
-k       = 0.004   # 0.004
-x_range = (-4,4) #(-4,4)
+omega   = float(input('Enter the value of omega : '))
+h       = 0.1  # 0.01
+k       = 0.04  # 0.0004
+x_range = (-3,3) #(-4,4)
 n       = int((x_range[1]- x_range[0])/(h))+1
 lam     = (1j*k)/(4*(h**2))
-omega   = float(input('Enter the value of omega : '))
 
 x       = np.linspace(x_range[0],x_range[1],n)
 y       = np.zeros(n)
-z       = 0.000001
+z       = 0.00000000001
 y[1]    = z*h
 
 ntp     = 2 #nombre periode
@@ -107,7 +107,7 @@ gamma   = 0.25       # gamma value for the potential
 def V(x,t):
     '''takes in the x coordinate and time
        returns the time dependent potential'''
-    b = (2+np.cos(omega*t))*(x**2)/2
+    b = (2+np.cos(omega*t))*(x**2)/2.0
     return b
 
 '''=========================================================================='''
@@ -133,7 +133,7 @@ def Psi(E):
 '''finding the eigenvalues'''
 def Eigen():
     Eigenvalues = []
-    a           = np.linspace(min(V(x,t)),1,20)
+    a           = np.linspace(min(V(x,t)),1,len(x))
     P           = np.array([Psi(i)[0] for i in a])
     for i in range(len(P)-1):
         if (P[i]<0 and P[i+1]>0) or (P[i]>0 and P[i+1]<0):
@@ -406,7 +406,7 @@ for i in range(len(sigma_width)):
     if i==0 or i==int(len(sigma_width)-1):
         premiere_nouvelle_var.append( (x**2)/(sigma_carree[i])                                                       )
     else:
-        premiere_nouvelle_var.append( (x**2)/(sigma_carree[i]) + (x**2)*(sigma_width[i-1]- sigma_width[i+1])/(2*k)   )
+        premiere_nouvelle_var.append( ((x**2)/(sigma_carree[i])) + (x**2)*( (sigma_width[i-1]- sigma_width[i+1])/(2*k) )**2   )
 
 for i in range(len(t_val)):
     premiere_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* premiere_nouvelle_var[i]* PSI_t[t_val[i]] , x , dx=h ) )
@@ -581,6 +581,7 @@ rapport_invariant =(Average(autretest_valeur) / Average(valeur_moyenne_I) ).real
 print("Rapport des deux invariant =%.4f " %rapport_invariant )
 print("Moyenne <H>/w=%.3f" %Average(autretest_valeur).real )
 print("Moyenne I(t)=%.3f" %Average(valeur_moyenne_I).real )
+print("Coefficient lambda=%.4f" %lam.imag )
 
 '''=========================================================================='''
 '''
