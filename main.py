@@ -77,7 +77,7 @@ Some arrays are also defined here:
 omega   = float(input('Enter the value of omega : '))
 h       = 0.1  # 0.01
 k       = 0.04  # 0.0004
-x_range = (-3,3) #(-4,4)
+x_range = (-5,5) #(-4,4)
 n       = int((x_range[1]- x_range[0])/(h))+1
 lam     = (1j*k)/(4*(h**2))
 
@@ -114,8 +114,24 @@ def V(x,t):
 '''defining the function to carry out Numerov method'''
 def Numerov(x,y1,y2,E):
     '''returns y[i+1] value'''
-    u = 1 - (1/6.)*(h**2)*(V(x,t)-E)
-    return ((12-10*u)*y1-u*y2)/u
+
+
+    kxn   = 2*(E-V(x  ,t) )  #kn
+    kxn1  = 2*(E-V(x+h,t) )  #kn+1
+    kxnm1 = 2*(E-V(x-h,t) )  #kn-1
+
+    return  (2*(1-5*(h*h*kxn)/12.0 )*y1-(1+(h*h*kxnm1)/12.0)*y2 )/(1+(h*h*kxn1)/12.0 )
+
+
+    """
+    u   = 1 - (1/6.)*(h**2)*(V(x  ,t)-E)
+    uu  = 1 - (1/6.)*(h**2)*(V(x+h,t)-E)
+    uuu = 1 - (1/6.)*(h**2)*(V(x-h,t)-E)
+    return ((12-10*u)*y1-uuu*y2)/uu
+    """
+
+    """u = 1 - (1/6.)*(h**2)*(V(x,t)-E)
+    return ((12-10*u)*y1-u*y2)/u"""
 
 '''=========================================================================='''
 '''defining a function to carry out Numerov for a given E'''
@@ -130,11 +146,19 @@ def Psi(E):
     return(m[-1],m)
 
 '''=========================================================================='''
-'''finding the eigenvalues'''
+'''finding the eigenvalues
+
+    a : array containing values within which the eigenvalues is to be searched.
+    P : array containing m[-1] for all psi corresponding to each E_trial value
+        in a.
+
+'''
 def Eigen():
     Eigenvalues = []
-    a           = np.linspace(min(V(x,t)),1,len(x))
+    #a           = np.linspace(min(V(x,t)),10,200)  # a           = np.linspace(min(V(x,t)),1,20)
+    a           = np.linspace(min(V(x,t)),1,20)
     P           = np.array([Psi(i)[0] for i in a])
+    #print(P)
     for i in range(len(P)-1):
         if (P[i]<0 and P[i+1]>0) or (P[i]>0 and P[i+1]<0):
             low  = a[i]
@@ -163,9 +187,7 @@ Eigenvalue_stock = []
 for t in t_val:
     print((t)*100/max(t_val) )
     Eigenvalue = Eigen()[0]
-    print((t)*100/max(t_val) )
     Eigenvalue_stock.append(Eigen()[0])
-    print((t)*100/max(t_val) )
     Psi_gs[t] = Psi(Eigenvalue)[1]
     #print('Psi_ground_state at t = ',t,' generated with eigenvalue = ',Eigenvalue)
 print('All Psi_gs generated')
@@ -175,14 +197,14 @@ print('All Psi_gs generated')
 def a(i,j):
     '''A matrix elements'''
     if i==j:
-        return 1 + 2*lam + 1j*k*V(x[i-1],t)/2
+        return 1 + 2*lam + 1j*k*V(x[i-1],t)/2.0
     elif abs(i-j) == 1:
         return -lam
 
 def b(i,j):
     '''B matrix elements'''
     if i==j:
-        return 1 - 2*lam - 1j*k*V(x[i-1],t)/2
+        return 1 - 2*lam - 1j*k*V(x[i-1],t)/2.0
     elif abs(i-j) == 1:
         return lam
 
@@ -326,29 +348,36 @@ plt.show()
 
 '''=========================================================================='''
 '''
-    sigma_width   : width of the Gaussian wavefunction at x=0.
-    valeur_valeur : an array to have the sigma_width values.
-    berry_phase   : array of Berry phase, which is defined as minus integral
-                    of 1/sigma squared.
-    derivee_sigma : derivative relative to time for sigma_width.
-    rapport_sigma : quotient of derivee_sigma/2*sigma.
-    autre_derivee : a way to calculate the derivative of sigma using logarithmic
-                    derivative instead of derivee_sigma and rapport_sigma in order
-                    to obtain the alpha(t) coefficient.
+    sigma_width         : width of the Gaussian wavefunction at x=0.
+    valeur_valeur       : an array to have the sigma_width values.
+    berry_phase         : array of Berry phase, which is defined as minus integral
+                            of 1/sigma squared.
+    derivee_sigma       : derivative relative to time for sigma_width.
+    rapport_sigma       : quotient of derivee_sigma/2*sigma.
+    autre_derivee       : a way to calculate the derivative of sigma using logarithmic
+                          derivative instead of derivee_sigma and rapport_sigma in order
+                          to obtain the alpha(t) coefficient.
+    normalisation_liste : array to store the psi* *psi
 
     function      : takes x and return -1/ x squared, i'm using it to calcualte
                     the Berry Phase as a simpson evaluation of its function.
 '''
 
-sigma_width   = []
-valeur_valeur = []
-berry_phase   = []
-derivee_sigma = []
-rapport_sigma = []
-autre_derivee = []
+sigma_width         = []
+valeur_valeur       = []
+berry_phase         = []
+derivee_sigma       = []
+rapport_sigma       = []
+autre_derivee       = []
+normalisation_liste = []
 
 def function(x):
     return [-1/ ((i) ** 2) for i in x]
+
+
+for i in range(int(len(t_val))):
+    normalisation_liste.append( simps( np.conj(PSI_t[t_val[i]])*PSI_t[t_val[i]] , x , dx=h )  )
+print(normalisation_liste )
 
 for i in range(len(t_val)):
     sigma_width.append(1/max(np.absolute(PSI_t[t_val[i]])*np.sqrt(math.pi)) )
@@ -409,7 +438,7 @@ for i in range(len(sigma_width)):
         premiere_nouvelle_var.append( ((x**2)/(sigma_carree[i])) + (x**2)*( (sigma_width[i-1]- sigma_width[i+1])/(2*k) )**2   )
 
 for i in range(len(t_val)):
-    premiere_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* premiere_nouvelle_var[i]* PSI_t[t_val[i]] , x , dx=h ) )
+    premiere_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* premiere_nouvelle_var[i]* PSI_t[t_val[i]] , x , dx=h )/(normalisation_liste[i].real**2) )
 
 '''=========================================================================='''
 '''
@@ -429,7 +458,7 @@ for i in range(int(len(t_val))):
     list_derivee_seconde.append(derivee_seconde_prems)
 
 for i in range(len(t_val)):
-    deuxieme_moyenne.append(  simps( np.conj(PSI_t[t_val[i]])* list_derivee_seconde[i] , x , dx=h )  )
+    deuxieme_moyenne.append(  simps( np.conj(PSI_t[t_val[i]])* list_derivee_seconde[i] , x , dx=h )/(normalisation_liste[i].real**2)  )
 
 '''=========================================================================='''
 '''
@@ -465,7 +494,7 @@ for i in range(int(len(t_val))):
 
 
 for i in range(len(t_val)):
-    quatriem_moyenne.append( simps( np.conj(PSI_t[t_val[i]])*x*derivee_x_psi[i], x , dx=h ))
+    quatriem_moyenne.append( simps( np.conj(PSI_t[t_val[i]])*x*derivee_x_psi[i], x , dx=h )/(normalisation_liste[i].real**2) )
 
 
 test_normalisation = []
@@ -526,16 +555,13 @@ for i in range(int(len(t_val))):
 
 energy_moyenne = []
 for i in range(len(t_val)):
-    energy_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* list_derivee_seconde_only[i]+ np.conj(PSI_t[t_val[i]] )* (2+np.cos(omega*t_val[i]))*(x**2)*0.5* PSI_t[t_val[i]] , x , dx=h ) )
+    energy_moyenne.append( simps( np.conj(PSI_t[t_val[i]])* list_derivee_seconde_only[i]/(normalisation_liste[i].real**2)+ np.conj(PSI_t[t_val[i]] )* (2+np.cos(omega*t_val[i]))*(x**2)*0.5* PSI_t[t_val[i]]/(normalisation_liste[i].real**2) , x , dx=h ) )
 
 autretest_valeur = []
 for i in range(len(t_val)):
     autretest_valeur.append(energy_moyenne[i]/( np.sqrt( (2+np.cos(omega*t_val[i]))) )  )
 
-normalisation_liste = []
-for i in range(int(len(t_val))):
-    normalisation_liste.append( simps( np.conj(PSI_t[t_val[i]])*PSI_t[t_val[i]] , x , dx=h )  )
-print(Average(normalisation_liste) )
+
 
 
 adiabatic_coefficient = []
