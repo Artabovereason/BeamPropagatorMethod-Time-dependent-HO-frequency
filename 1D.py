@@ -7,31 +7,37 @@ import platform
 import seaborn as sns
 sns.set(rc={'axes.facecolor':'whitesmoke'})
 
+'''
+	grid 	: define a grid.
+	x       : x variable.
+	y 		: set to 0, not used but a value must be given.
+	L		: builds the Laplacian in Fourier space.
+	kx		: x variable.
+
+	asborb  : introduces an absorbing shell at the border of the computational window.
+
+	savepsi : saves the data of abs(psi)**2 at different values of t.
+
+	output  : defines graphic output: |psi|^2 is depicted.
+
+'''
 
 def grid(Nx,Ny,xmax,ymax):
-	x = np.linspace(-xmax, xmax-2*xmax/Nx, Nx)     # x variable
-	y = 0                 # not used, but a value must be given
+	x = np.linspace(-xmax, xmax-2*xmax/Nx, Nx)
+	y = 0
 	return x,y;
 
-# Builds the Laplacian in Fourier space
-
 def L(Nx,Ny,xmax,ymax):
-	kx = np.linspace(-Nx/4/xmax, Nx/4/xmax-1/2/xmax, Nx)     # x variable
+	kx = np.linspace(-Nx/4/xmax, Nx/4/xmax-1/2/xmax, Nx)
 	return (2*np.pi*1.j*kx)**2
-
-# Introduces an absorbing shell at the border of the computational window
 
 def absorb(x,y,xmax,ymax,dt,absorb_coeff):
 	wx = xmax/20
 	return np.exp(-absorb_coeff*(2-np.tanh((x+xmax)/wx)+np.tanh((x-xmax)/wx))*dt);
 
-# Saves the data of abs(psi)**2 at different values of t
 
 def savepsi(Ny,psi):
-
 	return abs(psi)**2
-
-# Defines graphic output: |psi|^2 is depicted
 
 def output(x,y,psi,omega,n,t,folder,output_choice,fixmaximum):
 	# Number of figure
@@ -41,8 +47,6 @@ def output(x,y,psi,omega,n,t,folder,output_choice,fixmaximum):
 			num ='0'+str(int(n))
 		if n < 10:
 			num ='00'+str(int(n))
-
-
 
 	# plot the line chart
 	plt.rcParams["figure.figsize"] = (13,13)
@@ -59,27 +63,18 @@ def output(x,y,psi,omega,n,t,folder,output_choice,fixmaximum):
 	—————————————
 	|   |   |   |
 	—————————————
-
-	    Eigenvalue : the plot of the eigenvalues of the system
-	    <H>        : mean value of the energy
-	    fit        : correct theory potential energy
-	    potential  : numerical plot of the potential
-
-	It is intended that fit en potential tend to the same curve.
-	But, eigenvalue and <H> could differ in some cases.
-
 	'''
 	f_ax1 = fig.add_subplot(gs[0, :]) # used to make a big plot of 3 colon-wide
 	'''
 	    This whole section allows the grid [0,0], [0,1] and [0,2] to be unseen and
 	    only the f_ax1 to be seen.
 	'''
-	axs[0,0].set_xticks([], [])
-	axs[0,0].set_yticks([], [])
-	axs[0,1].set_xticks([], [])
-	axs[0,1].set_yticks([], [])
-	axs[0,2].set_xticks([], [])
-	axs[0,2].set_yticks([], [])
+	axs[0,0].set_xticks([])
+	axs[0,0].set_yticks([])
+	axs[0,1].set_xticks([])
+	axs[0,1].set_yticks([])
+	axs[0,2].set_xticks([])
+	axs[0,2].set_yticks([])
 
 	f_ax1.set_title('Total and potential energy fluctuations over time')
 	f_ax1.set_ylabel(' ')
@@ -128,7 +123,7 @@ def output(x,y,psi,omega,n,t,folder,output_choice,fixmaximum):
 	axs[1,1].set_title('System representation at $t=$%.3f' %t)
 	axs[1,1].set_ylabel(' ')
 	axs[1,1].set_xlabel('space $x$')
-	axs[1,1].plot(x, abs(psi)**2                    , color = 'blue' , label = 'wavefunction groundstate' )  
+	axs[1,1].plot(x, abs(psi)**2                    , color = 'blue' , label = 'wavefunction groundstate' )
 	axs[1,1].plot(x, (2+np.cos(omega*t))*(x**2)/2.0 , color = 'red'  , label = 'potential'                )
 	axs[1,1].set_ylim(-0.5,2.5)
 	#axs[1,1].legend(loc="best", prop={'size': 9})
