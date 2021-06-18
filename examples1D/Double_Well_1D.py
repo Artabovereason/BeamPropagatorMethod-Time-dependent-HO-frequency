@@ -23,10 +23,10 @@ import numpy as np
 '''
 
 omega         = float(input('Enter the value of omega : '))
-Nx            = 600
+Nx            = 600   # 600
 Ny            = Nx
-dt            = 0.001
-ntp           = 2
+dt            = 0.01 # 0.001
+ntp           = 5
 tmax          = ntp*2*np.pi/omega
 xmax          = 5
 ymax 	      = xmax

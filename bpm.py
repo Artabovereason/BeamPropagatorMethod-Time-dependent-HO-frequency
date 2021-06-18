@@ -10,9 +10,10 @@ import math
 from scipy.integrate   import simps
 import time
 start = time.clock()
-dt = 0.001                    # Evolution step
-dx = 1/60.0
-Nx = 600
+dt   = 0.01                    # Evolution step
+Nx   = 600
+xmax = 5
+dx   = 2*xmax/Nx
 '''=========================================================================='''
 '''
 
@@ -33,8 +34,8 @@ try:              # Erase all image files (if exist) before starting computation
 except:
     pass
 
-my    = importlib.__import__(sys.argv[1])
-build = importlib.__import__(sys.argv[2])
+my    = importlib.__import__(sys.argv[1]) #
+build = importlib.__import__(sys.argv[2]) # 1D
 
 
 '''=========================================================================='''
@@ -67,22 +68,23 @@ psi_dictionnary      = {}
 sigma_gaussian_width = []
 t_values             = []
 
+
 for j in range(steps_image*my.images+1):
     t_values.append(j*my.dt)
 
 # Main computational loop
 print("calculating", end="", flush=True)
 for j in range(steps_image*my.images+1):        # propagation loop
-    if j%steps_image == 0:  # Generates image output
+    if j%steps_image == 0:            # Generates image output
         #build.output(x,y,psi,omega,int(j/steps_image),j*my.dt,output_folder,my.output_choice,my.fixmaximum)
         savepsi[:,int(j/steps_image)]=build.savepsi(my.Ny,psi)
         print(".", end="", flush=True)
-    V = my.V(x,y,j*my.dt,psi,omega)            # potential operator
-    psi *= np.exp(-1.j*my.dt*V)            # potential phase
+    V = my.V(x,y,j*my.dt,psi,omega)   # potential operator
+    psi *= np.exp(-1.j*my.dt*V)       # potential phase
     if sys.argv[2] == "1D":
-        psi = np.fft.fft(psi)            # 1D Fourier transform
-        psi *=linear_phase                # linear phase from the Laplacian term
-        psi = border*np.fft.ifft(psi)    # inverse Fourier transform and damping by the absorbing shell
+        psi = np.fft.fft(psi)         # 1D Fourier transform
+        psi *=linear_phase            # linear phase from the Laplacian term
+        psi = border*np.fft.ifft(psi) # inverse Fourier transform and damping by the absorbing shell
         psi_dictionnary[j] = psi
         sigma_gaussian_width.append((1/(np.sqrt(math.pi)*(np.conj(psi_dictionnary[j][int(Nx/2)])*psi_dictionnary[j][int(Nx/2)]).real ) ) )
     else:
@@ -101,7 +103,13 @@ for j in range(steps_image*my.images+1):        # propagation loop
     Average                      : return average of a list
 '''
 sigma_gaussian_width_log_dot = []
-normalisation_liste = []
+normalisation_liste          = []
+berry_phase                  = []
+new_new_t_values             = []
+seconde_derivative_psi       = []
+mean_hamiltonian             = []
+new_t_values                 = []
+invariant_action             = []
 
 def Average(lst):
     return sum(lst) / len(lst)
@@ -117,21 +125,20 @@ for i in range(len(t_values)):
         sigma_gaussian_width_log_dot.append(  ( np.log(sigma_gaussian_width[i-1])- np.log(sigma_gaussian_width[i+1]))/(4*dt)     )
 
 def function(x):
-    return [-1/ ((i) ** 2) for i in x]
+    return [1/ ((i) ** 2) for i in x]
 
-berry_phase = []
-new_new_t_values = []
-berry_phase.append(0)
+
 new_new_t_values.append(0)
-for i in range(1,len(t_values),10):
-    new_new_t_values.append(t_values[i])
-    #print(i)
-    berry_phase.append( 0.5*simps( function(sigma_gaussian_width[:i]) , t_values[:i] , dt ) )
+for i in range(len(t_values)):
+    if i == 0 :
+        berry_phase.append(0)
+    else :
+        new_new_t_values.append(t_values[i])
+        berry_phase.append( -0.5*simps( function(sigma_gaussian_width[:i]) , t_values[:i] , dt ) )
 
 
-seconde_derivative_psi = []
+
 for i in range(0,int(len(t_values))):
-    #print('i=%.1f'%i)
     derivee_seconde_prems = []
     derivee_seconde_prems.append(0)
     for w in range(int(1),int(len(x)-1)):
@@ -139,12 +146,15 @@ for i in range(0,int(len(t_values))):
     derivee_seconde_prems.append(0)
     seconde_derivative_psi.append(derivee_seconde_prems)
 
-mean_hamiltonian = []
-new_t_values = []
-invariant_action=[]
-for i in range(0,len(t_values)):
+'''=========================================================================='''
+'''
+    <H>
+    <H>/omega
+'''
+
+for i in range(len(t_values)):
     new_t_values.append(t_values[i])
-    mean_hamiltonian.append( ((simps( -0.5*np.conj(psi_dictionnary[i])* seconde_derivative_psi[i]+ np.conj(psi_dictionnary[i])* (2+np.cos(omega*t_values[i]))*(x**2)* psi_dictionnary[i]*0.5 , x , dx ))/normalisation_liste[i]).real )
+    mean_hamiltonian.append( ((simps( -0.5*np.conj(psi_dictionnary[i])* seconde_derivative_psi[i]+ np.conj(psi_dictionnary[i])* (2+np.cos(omega*t_values[i]))*(x**2)* psi_dictionnary[i]*0.5 , x , dx ))).real )
     invariant_action.append(   (mean_hamiltonian[int(i)]/np.sqrt((2+np.cos(omega*t_values[int(i)])))).real  )
 
 
@@ -159,11 +169,12 @@ for i in range(0,len(t_values)):
 
 first_mean_value = []
 
+
 for i in range(len(t_values)):
     if i==0 or i==int(len(t_values)-1):
         first_mean_value.append( simps( np.conj(psi_dictionnary[i])*( (x**2)/(sigma_gaussian_width[i]**2)  )*psi_dictionnary[i] , x, dx) )
     else:
-        first_mean_value.append( simps( np.conj(psi_dictionnary[i])*( (x**2)/(sigma_gaussian_width[i]**2)+(x**2)*(( (sigma_gaussian_width[i-1]-sigma_gaussian_width[i+1])/(2*dt) )**2  )  )*psi_dictionnary[i] , x, dx) )
+        first_mean_value.append( simps( np.conj(psi_dictionnary[i])*( ((x**2)/(sigma_gaussian_width[i]**2))+(x**2)*(( (sigma_gaussian_width[i-1]-sigma_gaussian_width[i+1])/(2*dt) )**2  )  )*psi_dictionnary[i] , x, dx) )
 
 '''
     Quantum mean of sigma2 <second derivative relative to x>
@@ -179,7 +190,7 @@ for i in range(int(len(t_values))):
     derivee_seconde_prems = []
     derivee_seconde_prems.append(0)
     for w in range(int(1),int(len(x)-1)):
-        derivee_seconde_prems.append( (sigma_gaussian_width[i]**2)* (psi_dictionnary[i][int(w-1)]-2*psi_dictionnary[i][int(w)]+psi_dictionnary[i][int(w+1)])/(dx*dx)    )
+        derivee_seconde_prems.append(  (psi_dictionnary[i][int(w-1)]-2*psi_dictionnary[i][int(w)]+psi_dictionnary[i][int(w+1)])/(dx*dx)    )
     derivee_seconde_prems.append(0)
     secnd_derivative_psi.append(derivee_seconde_prems)
 
@@ -187,7 +198,7 @@ for i in range(len(t_values)):
     if i==0 or i==int(len(t_values)-1):
         secnd_mean_value.append(0)
     else:
-        secnd_mean_value.append( simps( (sigma_gaussian_width[i]**2)*np.conj(psi_dictionnary[i])*secnd_derivative_psi[i]  , x, dx)  )
+        secnd_mean_value.append( (sigma_gaussian_width[i]**2)*simps( np.conj(psi_dictionnary[i])*secnd_derivative_psi[i]  , x, dx)  )
 
 '''
     Quantum mean of i sigma dot(sigma) (<x derivative x> +1 )
@@ -200,19 +211,29 @@ for i in range(len(t_values)):
 third_mean_value = []
 derivative_sigma = []
 derivative_psi   = []
+
 for i in range(int(len(t_values))):
     if i==0 or i==int(len(t_values)-1):
         derivative_sigma.append(0)
-        derivative_psi.append(0)
     else:
         derivative_sigma.append(  (sigma_gaussian_width[i-1]-sigma_gaussian_width[i+1])/(2*dt) )
-        derivative_psi.append( (psi_dictionnary[i-1]-psi_dictionnary[i+1])/(2*dx) )
+
+for i in range(int(len(t_values))):
+    derivee_premier_prems = []
+    derivee_premier_prems.append(0)
+    for w in range(int(1),int(len(x)-1)):
+        derivee_premier_prems.append(  (psi_dictionnary[i][int(w-1)]-psi_dictionnary[i][int(w+1)])/(2*dx)    )
+    derivee_premier_prems.append(0)
+    derivative_psi.append(derivee_premier_prems)
+
+
 
 for i in range(int(len(t_values))):
     if i==0 or i==int(len(t_values)-1):
         third_mean_value.append(0)
     else:
-        third_mean_value.append( 1j*simps(sigma_gaussian_width[i]*derivative_sigma[i]*(2*x*np.conj(psi_dictionnary[i])*(derivative_psi[i])+np.conj(psi_dictionnary[i])*psi_dictionnary[i] ) , x ,dx ) )
+        third_mean_value.append( 1j*simps(sigma_gaussian_width[i]*derivative_sigma[i]*(2*np.conj(psi_dictionnary[i])*x*(derivative_psi[i])+np.conj(psi_dictionnary[i])*psi_dictionnary[i] ) , x ,dx ) )
+
 
 '''
     Quantum mean of the Ermakov's invariant I(t)
@@ -223,12 +244,32 @@ for i in range(int(len(t_values))):
 mean_value_I = []
 
 for i in range(int(len(t_values))):
-    mean_value_I.append( 0.5*(first_mean_value[i]-secnd_mean_value[i]+third_mean_value[i]).real )
+    mean_value_I.append( 0.5*(first_mean_value[i]-secnd_mean_value[i]+third_mean_value[i]) )
+
 
 print(' ')
 print('Mean of invariant action is :%.3f'%Average(invariant_action))
+#print(mean_value_I)
 print('Mean of I is :%.3f'%Average(mean_value_I))
 
+dynamical_phase = []
+values_time     = []
+for i in range(1,int(len(t_values)-1)):
+    values_time.append(t_values[i])
+    dynamical_phase.append( -simps( mean_hamiltonian[:i] , t_values[:i], dt))
+
+total_phase = []
+for i in range(1,int(len(t_values)-2)):
+    total_phase.append(dynamical_phase[i]+berry_phase[i])
+
+adiabatic_coefficient_eta = []
+for i in range(len(t_values)):
+    if i == 0 or i == int(len(t_values)-1):
+        adiabatic_coefficient_eta.append(0)
+    else:
+        adiabatic_coefficient_eta.append( ((np.sqrt(2+np.cos(omega*t_values[i-1]))-np.sqrt(2+np.cos(omega*t_values[i+1]))  )/(2*dt))/(2+np.cos(omega*t_values[i]))    )
+
+print('The adiabatic coefficient for omega=%.3f'%omega+' is =%.3f'% max(adiabatic_coefficient_eta))
 '''=========================================================================='''
 
 plt.rcParams["figure.figsize"] = (13,13)             #size of the output picture
@@ -328,7 +369,9 @@ axs[1,2].legend(loc="upper right", prop={'size': 9})
 axs[2,0].set_title('Berry phase through time')
 axs[2,0].set_ylabel('$beta(t)$ in degrees')
 axs[2,0].set_xlabel('time $t$ in s')
-axs[2,0].plot(new_new_t_values   , berry_phase         , color='blue' , label ='phase'  )
+axs[2,0].plot(new_new_t_values , berry_phase     , color='blue'   , label ='berry phase'     )
+axs[2,0].plot(values_time      , dynamical_phase , color='orange' , label ='dynamical phase' )
+axs[2,0].plot(values_time[0:int(len(values_time)-1)]      , total_phase     , color='green'  , label ='total phase'     )
 axs[2,0].legend(loc="best", prop={'size': 9})
 
 '''======================================================================'''
@@ -365,7 +408,7 @@ axs[2,2].set_ylabel(' ')
 axs[2,2].set_ylim(0,3)
 axs[2,2].set_xlabel('time $t$ in s')
 axs[2,2].plot(new_t_values , invariant_action , color = 'orange' , label = '$<H>/\omega$=%.3f'%Average(invariant_action) )
-axs[2,2].plot(t_values     , mean_value_I     , color = 'blue'   , label = '$<I(t)>=$%.3f'    %Average(mean_value_I)     )
+axs[2,2].plot(t_values[1:int(len(t_values)-1)]     , mean_value_I[1:int(len(t_values)-1)]      , color = 'blue'   , label = '$<I(t)>=$%.3f'    %Average(mean_value_I)     )
 axs[2,2].legend(loc="best", prop={'size': 9})
 
 '''======================================================================'''
