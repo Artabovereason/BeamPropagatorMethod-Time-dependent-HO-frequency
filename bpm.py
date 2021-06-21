@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(rc={'axes.facecolor':'whitesmoke'})
 import math
+import cmath
 from scipy.integrate   import simps
 import time
 start = time.clock()
@@ -67,10 +68,13 @@ omega                = float(input('Enter the value of omega : '))
 psi_dictionnary      = {}
 sigma_gaussian_width = []
 t_values             = []
-
+potential_phase      = []
 
 for j in range(steps_image*my.images+1):
     t_values.append(j*my.dt)
+
+
+
 
 # Main computational loop
 print("calculating", end="", flush=True)
@@ -81,6 +85,7 @@ for j in range(steps_image*my.images+1):        # propagation loop
         print(".", end="", flush=True)
     V = my.V(x,y,j*my.dt,psi,omega)   # potential operator
     psi *= np.exp(-1.j*my.dt*V)       # potential phase
+    potential_phase.append(-my.dt*V)
     if sys.argv[2] == "1D":
         psi = np.fft.fft(psi)         # 1D Fourier transform
         psi *=linear_phase            # linear phase from the Laplacian term
@@ -117,9 +122,10 @@ def Average(lst):
 for i in range(len(t_values)):
     normalisation_liste.append( (simps( np.conj(psi_dictionnary[i])*(psi_dictionnary[i]) ,x , dx)).real )
 
+"""
 for i in range(len(sigma_gaussian_width)):
     sigma_gaussian_width[i]=sigma_gaussian_width[i]/normalisation_liste[i]
-
+"""
 
 for i in range(len(t_values)):
     if i == 0 or i == len(t_values)-1:
@@ -262,9 +268,7 @@ for i in range(1,int(len(t_values))):
     dynamical_phase.append( -simps( mean_hamiltonian[:i] , t_values[:i], dt))
 
 alternate_berry = []
-print(len(t_values))
-print(len(berry_phase))
-print(len(dynamical_phase))
+
 for i in range(1,int(len(t_values)-1)):
     alternate_berry.append(berry_phase[i]-dynamical_phase[i])
 
@@ -282,6 +286,58 @@ for i in range(len(t_values)):
 
 print('The adiabatic coefficient for omega=%.3f'%omega+' is =%.3f'% max(adiabatic_coefficient_eta))
 '''=========================================================================='''
+
+"""
+analogous_phase = []
+for i in range(len(t_values)):
+    analogous_phase.append( np.angle( Average(psi_dictionnary[i]) ,deg=False)+Average(potential_phase[i]) )
+"""
+
+def wavefunction(x,sigma):
+    return np.exp(-((x)**2)/(2*sigma))/(np.sqrt(np.sqrt(np.pi) * sigma ) )
+
+phase_explicit = []
+for i in range(len(t_values)):
+    cache_value_phase = []
+    for w in range(len(x)):
+        cache_value_phase.append( -1j * np.log( psi_dictionnary[i][w]/wavefunction(x[w],sigma_gaussian_width[i] ) ) - potential_phase[i][w] )
+
+        phase_explicit.append( cache_value_phase )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''=========================================================================='''
+
 
 plt.rcParams["figure.figsize"] = (13,13)             #size of the output picture
 
@@ -377,12 +433,13 @@ axs[1,2].legend(loc="upper right", prop={'size': 9})
 —————————————
 '''
 
-axs[2,0].set_title('Berry phase through time')
-axs[2,0].set_ylabel('$beta(t)$ in degrees')
+axs[2,0].set_title('Phases through time')
+axs[2,0].set_ylabel('phase in degrees')
 axs[2,0].set_xlabel('time $t$ in s')
-axs[2,0].plot(new_new_t_values , berry_phase     , color='blue'   , label ='berry phase'     )
-axs[2,0].plot(values_time      , dynamical_phase , color='orange' , label ='dynamical phase' )
-axs[2,0].plot(values_time[:int(len(values_time)-1)]      , alternate_berry , color='green' , label =' ' )
+axs[2,0].plot(new_new_t_values                      , berry_phase     , color='blue'   , label ='beta(t)'        )
+axs[2,0].plot(values_time                           , dynamical_phase , color='orange' , label ='dynamical '     )
+axs[2,0].plot(values_time[:int(len(values_time)-1)] , alternate_berry , color='green'  , label ='beta-dynamical' )
+#axs[2,0].plot(t_values, analogous_phase)
 #axs[2,0].plot(values_time[0:int(len(values_time)-1)]      , total_phase     , color='green'  , label ='total phase'     )
 axs[2,0].legend(loc="best", prop={'size': 9})
 
