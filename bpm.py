@@ -117,6 +117,9 @@ def Average(lst):
 for i in range(len(t_values)):
     normalisation_liste.append( (simps( np.conj(psi_dictionnary[i])*(psi_dictionnary[i]) ,x , dx)).real )
 
+for i in range(len(sigma_gaussian_width)):
+    sigma_gaussian_width[i]=sigma_gaussian_width[i]/normalisation_liste[i]
+
 
 for i in range(len(t_values)):
     if i == 0 or i == len(t_values)-1:
@@ -254,13 +257,21 @@ print('Mean of I is :%.3f'%Average(mean_value_I))
 
 dynamical_phase = []
 values_time     = []
-for i in range(1,int(len(t_values)-1)):
+for i in range(1,int(len(t_values))):
     values_time.append(t_values[i])
     dynamical_phase.append( -simps( mean_hamiltonian[:i] , t_values[:i], dt))
 
-total_phase = []
-for i in range(1,int(len(t_values)-2)):
-    total_phase.append(dynamical_phase[i]+berry_phase[i])
+alternate_berry = []
+print(len(t_values))
+print(len(berry_phase))
+print(len(dynamical_phase))
+for i in range(1,int(len(t_values)-1)):
+    alternate_berry.append(berry_phase[i]-dynamical_phase[i])
+
+
+#total_phase = []
+#for i in range(1,int(len(t_values)-2)):
+#    total_phase.append(dynamical_phase[i]+berry_phase[i])
 
 adiabatic_coefficient_eta = []
 for i in range(len(t_values)):
@@ -371,7 +382,8 @@ axs[2,0].set_ylabel('$beta(t)$ in degrees')
 axs[2,0].set_xlabel('time $t$ in s')
 axs[2,0].plot(new_new_t_values , berry_phase     , color='blue'   , label ='berry phase'     )
 axs[2,0].plot(values_time      , dynamical_phase , color='orange' , label ='dynamical phase' )
-axs[2,0].plot(values_time[0:int(len(values_time)-1)]      , total_phase     , color='green'  , label ='total phase'     )
+axs[2,0].plot(values_time[:int(len(values_time)-1)]      , alternate_berry , color='green' , label =' ' )
+#axs[2,0].plot(values_time[0:int(len(values_time)-1)]      , total_phase     , color='green'  , label ='total phase'     )
 axs[2,0].legend(loc="best", prop={'size': 9})
 
 '''======================================================================'''
