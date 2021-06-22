@@ -26,8 +26,14 @@ omega         = float(input('Enter the value of omega : '))
 Nx            = 600   # 600
 Ny            = Nx
 dt            = 0.01 # 0.001
-ntp           = 10
-tmax          = ntp*2*np.pi/omega
+ntp           = 3
+
+
+if omega==0 :
+	tmax 	  = ntp*2*np.pi
+else:
+	tmax      = ntp*2*np.pi/omega
+
 xmax          = 5
 ymax 	      = xmax
 images 		  = 300
@@ -39,7 +45,7 @@ fixmaximum    = 0
 
 def psi_0(x,y):
 
-	f = 0.j+np.exp(-((x)**2)/2)/np.sqrt(np.sqrt(np.pi))   # A Gaussian
+	f = 0.j+np.exp(-( (x)**2)/2)/np.sqrt(np.sqrt(np.pi))   # A Gaussian
 
 	return f;
 

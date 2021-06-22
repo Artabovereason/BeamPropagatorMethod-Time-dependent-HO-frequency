@@ -77,12 +77,12 @@ for j in range(steps_image*my.images+1):
 
 
 # Main computational loop
-print("calculating", end="", flush=True)
+#print("calculating", end="", flush=True)
 for j in range(steps_image*my.images+1):        # propagation loop
     if j%steps_image == 0:            # Generates image output
         #build.output(x,y,psi,omega,int(j/steps_image),j*my.dt,output_folder,my.output_choice,my.fixmaximum)
         savepsi[:,int(j/steps_image)]=build.savepsi(my.Ny,psi)
-        print(".", end="", flush=True)
+        #print(".", end="", flush=True)
     V = my.V(x,y,j*my.dt,psi,omega)   # potential operator
     psi *= np.exp(-1.j*my.dt*V)       # potential phase
     potential_phase.append(-my.dt*V)
@@ -253,19 +253,17 @@ for i in range(int(len(t_values))):
 mean_value_I = []
 
 for i in range(int(len(t_values))):
-    mean_value_I.append( 0.5*(first_mean_value[i]-secnd_mean_value[i]+third_mean_value[i]) )
+    mean_value_I.append( 0.5*(first_mean_value[i]-secnd_mean_value[i]+third_mean_value[i]).real )
 
 
-print(' ')
-print('Mean of invariant action is :%.3f'%Average(invariant_action))
-#print(mean_value_I)
-print('Mean of I is :%.3f'%Average(mean_value_I))
+
 
 dynamical_phase = []
 values_time     = []
 for i in range(1,int(len(t_values))):
     values_time.append(t_values[i])
-    dynamical_phase.append( -simps( mean_hamiltonian[:i] , t_values[:i], dt))
+    dynamical_phase.append( -simps( mean_hamiltonian[:i] , t_values[:i], dt) )
+    #dynamical_phase.append( np.exp(-1j*mean_hamiltonian[i]*t_values[i] ) )
 
 alternate_berry = []
 
@@ -284,40 +282,68 @@ for i in range(len(t_values)):
     else:
         adiabatic_coefficient_eta.append( ((np.sqrt(2+np.cos(omega*t_values[i-1]))-np.sqrt(2+np.cos(omega*t_values[i+1]))  )/(2*dt))/(2+np.cos(omega*t_values[i]))    )
 
-print('The adiabatic coefficient for omega=%.3f'%omega+' is =%.3f'% max(adiabatic_coefficient_eta))
+
 '''=========================================================================='''
 
-"""
-analogous_phase = []
-for i in range(len(t_values)):
-    analogous_phase.append( np.angle( Average(psi_dictionnary[i]) ,deg=False)+Average(potential_phase[i]) )
-"""
-
 def wavefunction(x,sigma):
-    return np.exp(-((x)**2)/(2*sigma))/(np.sqrt(np.sqrt(np.pi) * sigma ) )
+    return np.exp(-((x)**2)/(2*(sigma**2) ))/(np.sqrt(np.sqrt(np.pi) * sigma ) )
 
 phase_explicit = []
+
 for i in range(len(t_values)):
     cache_value_phase = []
+
     for w in range(len(x)):
         cache_value_phase.append( -1j * np.log( psi_dictionnary[i][w]/wavefunction(x[w],sigma_gaussian_width[i] ) ) - potential_phase[i][w] )
 
-        phase_explicit.append( cache_value_phase )
+    phase_explicit.append( (cache_value_phase[int(len(x)/2)]) )
+
+    while phase_explicit[i]>phase_explicit[i-1]:
+        phase_explicit[i]=phase_explicit[i]-2*np.pi
 
 
+'''=========================================================================='''
+
+def baseline(t):
+    return -26*t/30
+
+other_phase_ = []
+for i in range(len(t_values)):
+    other_phase_.append( np.exp(1j*mean_hamiltonian[i]*t_values[i] )  )
 
 
+baselineplot = []
+true_berry_phase = []
+for i in range(len(t_values)):
+    true_berry_phase.append( -baseline(t_values[i])+phase_explicit[i].real )
+    baselineplot.append( baseline(t_values[i]) )
 
 
-
-
-
-
-
-
-
-
-
+"""
+plt.plot(t_values,other_phase_ )
+plt.show()
+"""
+print(' ')
+print(' ')
+print(' ')
+print('====================================================================')
+print(' ')
+print(' ')
+print('This simulation was for omega : %.3f'%omega+' with %.3f'%1 +' periods')
+print(' ')
+print('Mean of invariant action is : %.3f'%Average(invariant_action))
+print(' ')
+print('Mean of I is : %.3f'%Average(mean_value_I))
+print(' ')
+print('The adiabatic coefficient for omega : %.3f'%omega+' is : %.3f'% max(adiabatic_coefficient_eta))
+print(' ')
+print('The Berry phase after one period is : %.3f'%max(true_berry_phase).real )
+print(' ')
+print(' ')
+print('====================================================================')
+print(' ')
+print(' ')
+print(' ')
 
 
 
@@ -436,11 +462,10 @@ axs[1,2].legend(loc="upper right", prop={'size': 9})
 axs[2,0].set_title('Phases through time')
 axs[2,0].set_ylabel('phase in degrees')
 axs[2,0].set_xlabel('time $t$ in s')
-axs[2,0].plot(new_new_t_values                      , berry_phase     , color='blue'   , label ='beta(t)'        )
-axs[2,0].plot(values_time                           , dynamical_phase , color='orange' , label ='dynamical '     )
-axs[2,0].plot(values_time[:int(len(values_time)-1)] , alternate_berry , color='green'  , label ='beta-dynamical' )
-#axs[2,0].plot(t_values, analogous_phase)
-#axs[2,0].plot(values_time[0:int(len(values_time)-1)]      , total_phase     , color='green'  , label ='total phase'     )
+axs[2,0].plot(new_new_t_values , berry_phase               , color='blue'   , label ='beta(t)'         )
+axs[2,0].plot(t_values         , phase_explicit     , '--' , color='red'    , label ='numerical phase' )
+axs[2,0].plot(t_values         , baselineplot              , color='black'  , label='baseline'         )
+axs[2,0].plot(t_values         , true_berry_phase          , color='orange' , label='Berry'            )
 axs[2,0].legend(loc="best", prop={'size': 9})
 
 '''======================================================================'''
