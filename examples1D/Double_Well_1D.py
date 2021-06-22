@@ -45,7 +45,7 @@ fixmaximum    = 0
 
 def psi_0(x,y):
 
-	f = 0.j+np.exp(-( (x)**2)/2)/np.sqrt(np.sqrt(np.pi))   # A Gaussian
+	f = 0.j+np.exp(-( (x**2))/2)/np.sqrt(np.sqrt(np.pi))   # A Gaussian
 
 	return f;
 

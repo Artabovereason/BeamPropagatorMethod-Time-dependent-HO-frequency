@@ -15,6 +15,7 @@ dt   = 0.01                    # Evolution step
 Nx   = 600
 xmax = 5
 dx   = 2*xmax/Nx
+ntp = 3
 '''=========================================================================='''
 '''
 
@@ -164,7 +165,7 @@ for i in range(0,int(len(t_values))):
 for i in range(len(t_values)):
     new_t_values.append(t_values[i])
     mean_hamiltonian.append( ((simps( -0.5*np.conj(psi_dictionnary[i])* seconde_derivative_psi[i]+ np.conj(psi_dictionnary[i])* (2+np.cos(omega*t_values[i]))*(x**2)* psi_dictionnary[i]*0.5 , x , dx ))).real )
-    invariant_action.append(   (mean_hamiltonian[int(i)]/np.sqrt((2+np.cos(omega*t_values[int(i)])))).real  )
+    invariant_action.append(  ( (mean_hamiltonian[int(i)]/np.sqrt((2+np.cos(omega*t_values[int(i)])))).real )/(2*0.577777) )
 
 
 
@@ -289,17 +290,18 @@ def wavefunction(x,sigma):
     return np.exp(-((x)**2)/(2*(sigma**2) ))/(np.sqrt(np.sqrt(np.pi) * sigma ) )
 
 phase_explicit = []
-
+other_way_around = []
 for i in range(len(t_values)):
     cache_value_phase = []
 
     for w in range(len(x)):
-        cache_value_phase.append( -1j * np.log( psi_dictionnary[i][w]/wavefunction(x[w],sigma_gaussian_width[i] ) ) - potential_phase[i][w] )
-
+        cache_value_phase.append( -1j * np.log( psi_dictionnary[i][w]/wavefunction(x[w],sigma_gaussian_width[i] ) ) - 1j*potential_phase[i][w] )
+    other_way_around.append( -1j * np.log( psi_dictionnary[i][int(len(x)/2)]/wavefunction(x[int(len(x)/2)],sigma_gaussian_width[i] ) )  )
     phase_explicit.append( (cache_value_phase[int(len(x)/2)]) )
 
     while phase_explicit[i]>phase_explicit[i-1]:
         phase_explicit[i]=phase_explicit[i]-2*np.pi
+        other_way_around[i]= other_way_around[i]-2*np.pi
 
 
 '''=========================================================================='''
@@ -309,27 +311,42 @@ def baseline(t):
 
 other_phase_ = []
 for i in range(len(t_values)):
-    other_phase_.append( np.exp(1j*mean_hamiltonian[i]*t_values[i] )  )
+    if i == 0 or i==int(len(t_values)-1):
+        other_phase_.append(0)
+    else:
+        other_phase_.append(  simps(mean_hamiltonian[:i] , t_values[:i] ,dt)   )
+
+test_phase = []
+for i in range(len(t_values)):
+    test_phase.append(other_way_around[i]+other_phase_[i]-2.5*t_values[i]/18 )
 
 
-baselineplot = []
+baselineplot     = []
 true_berry_phase = []
 for i in range(len(t_values)):
     true_berry_phase.append( -baseline(t_values[i])+phase_explicit[i].real )
     baselineplot.append( baseline(t_values[i]) )
 
 
-"""
-plt.plot(t_values,other_phase_ )
-plt.show()
-"""
+def fitting_function(t):
+    return min(phase_explicit).real*t/max(t_values)
+
+fitting_function_array = []
+for i in range(len(t_values)):
+    fitting_function_array.append(fitting_function(t_values[i]))
+
+
+
 print(' ')
 print(' ')
 print(' ')
 print('====================================================================')
 print(' ')
 print(' ')
-print('This simulation was for omega : %.3f'%omega+' with %.3f'%1 +' periods')
+if omega==0 :
+    print('This simulation was for omega : %.3f'%omega+' with %.3f'%10 +' periods')
+else :
+    print('This simulation was for omega : %.3f'%omega+' with %.3f'%ntp +' periods')
 print(' ')
 print('Mean of invariant action is : %.3f'%Average(invariant_action))
 print(' ')
@@ -337,7 +354,13 @@ print('Mean of I is : %.3f'%Average(mean_value_I))
 print(' ')
 print('The adiabatic coefficient for omega : %.3f'%omega+' is : %.3f'% max(adiabatic_coefficient_eta))
 print(' ')
-print('The Berry phase after one period is : %.3f'%max(true_berry_phase).real )
+#print('The Berry phase after one period is : %.3f'%max(true_berry_phase).real )
+if omega==0 :
+    print('The phase after %.3f'%10+' periods is : %.3f'%min(berry_phase).real +' which is %.3f'% (min(berry_phase).real/10) +' per periods')
+else :
+    print('The phase after %.3f'%ntp+' periods is : %.3f'%min(berry_phase).real +' which is %.3f'% (min(berry_phase).real/int(ntp)) +' per periods')
+print(' ')
+print('The maximal time in the array t_values is %.3f'%max(t_values) )
 print(' ')
 print(' ')
 print('====================================================================')
@@ -346,23 +369,50 @@ print(' ')
 print(' ')
 
 
+"""
+    The so-called "phase" down here is the Δβ in the paper.
+  _____________________________________
+ | omega0 |  eta   |  phase  | time  s |
+ |¯¯¯¯¯¯¯¯|¯¯¯¯¯¯¯¯|¯¯¯¯¯¯¯¯¯|¯¯¯¯¯¯¯¯¯|
+ | 0.000  | 0.000  | -1.563  |  25.00  |
+ | 0.100  | 0.024  | -41.827 |  400.3  |
+ | 0.125  | 0.030  | -33.910 |  330.0  |
+ | 0.250  | 0.061  | -17.088 |  126.0  |
+ | 0.500  | 0.121  | -8.217  |  47.00  |
+ | 0.750  | 0.182  | -5.453  |  28.00  |
+ | 1.000  | 0.242  | -4.126  |  21.00  |
+ | 1.500  | 0.363  | -2.611  |  13.00  |
+ | 2.000  | 0.484  | -2.011  |  12.00  |
+ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"""
 
 '''=========================================================================='''
+
+
+omega0_point                  = [ 0     ,   0.100 ,   0.125 ,   0.25  ,  0.5   ,  0.75  ,  1     ,  1.5   ,  2     ]
+phase_out_calculus            = [-1.563 , -41.827 , -33.910 , -17.088 , -8.217 , -5.453 , -4.126 , -2.611 , -2.011 ]
+phase_out_calculus_exp_angle  = []
+phase_out_calculus_exp_angle.append( np.angle(np.exp(1j*phase_out_calculus[0]) )+1.563 )
+for i in range(1,len(phase_out_calculus)):
+    phase_out_calculus_exp_angle.append( np.angle(np.exp(1j*phase_out_calculus[i]) )+1.563 )
+    """
+    if phase_out_calculus_exp_angle[i]>np.pi:
+        phase_out_calculus_exp_angle[i]=phase_out_calculus_exp_angle[i]-2*np.pi
+    else:
+        None
+    if phase_out_calculus_exp_angle[i]<-np.pi:
+        phase_out_calculus_exp_angle[i]=phase_out_calculus_exp_angle[i]+2*np.pi
+    else:
+        None
+    """
+
+    while phase_out_calculus_exp_angle[i]>phase_out_calculus_exp_angle[i-1]:
+        phase_out_calculus_exp_angle[i]=phase_out_calculus_exp_angle[i]-2*np.pi
+
+
+print(phase_out_calculus_exp_angle)
+
 
 
 plt.rcParams["figure.figsize"] = (13,13)             #size of the output picture
@@ -394,7 +444,7 @@ f_ax1.set_title('Total and potential energy fluctuations over time')
 f_ax1.set_ylabel(' ')
 f_ax1.set_xlabel('time $t$ in s')
 f_ax1.plot(new_t_values , mean_hamiltonian                            , color='aquamarine' , label = '<$H$>'     )
-f_ax1.plot(t_values     , [(2+np.cos(omega*w))*0.5 for w in t_values] , color='blue'       , label = 'potential' )
+f_ax1.plot(t_values     , [np.sqrt(2+np.cos(omega*w)) for w in t_values] , color='blue'       , label = 'potential' )
 f_ax1.legend(loc="upper right", prop={'size': 9})
 
 '''======================================================================'''
@@ -408,10 +458,13 @@ f_ax1.legend(loc="upper right", prop={'size': 9})
 —————————————
 '''
 
-axs[1,0].set_title('normalisation')
-axs[1,0].set_ylabel(' ')
-axs[1,0].set_xlabel('time $t$')
-axs[1,0].plot(t_values, normalisation_liste , color = "red")
+axs[1,0].set_title('Berry phase after one period')
+axs[1,0].set_ylabel('Radians')
+axs[1,0].set_xlabel('Adiabatic coefficient $\eta$')
+for i in range(7):
+    axs[1,0].hlines(y=-i*2*np.pi, xmin = min(omega0_point), xmax=max(omega0_point) )
+axs[1,0].scatter(omega0_point,phase_out_calculus_exp_angle,color='red')
+#axs[1,0].plot(t_values, normalisation_liste , color = "red")
 
 
 '''======================================================================'''
@@ -459,13 +512,21 @@ axs[1,2].legend(loc="upper right", prop={'size': 9})
 —————————————
 '''
 
+
+
 axs[2,0].set_title('Phases through time')
 axs[2,0].set_ylabel('phase in degrees')
 axs[2,0].set_xlabel('time $t$ in s')
-axs[2,0].plot(new_new_t_values , berry_phase               , color='blue'   , label ='beta(t)'         )
-axs[2,0].plot(t_values         , phase_explicit     , '--' , color='red'    , label ='numerical phase' )
-axs[2,0].plot(t_values         , baselineplot              , color='black'  , label='baseline'         )
-axs[2,0].plot(t_values         , true_berry_phase          , color='orange' , label='Berry'            )
+axs[2,0].plot(new_new_t_values , berry_phase              , color='blue'   , label ='beta(t)'         )
+axs[2,0].plot(t_values         , phase_explicit    , '--' , color='red'    , label ='numerical phase' )
+#axs[2,0].plot(t_values         , other_way_around  , '--' , color='orange' , label ='numerical phase' )
+#axs[2,0].plot(t_values[:int(len(t_values)-1)]         , test_phase[:int(len(t_values)-1)]     , '--' , color='green'    , label ='Berry phase' )
+#axs[2,0].plot(t_values         , other_phase_     , '--' , color='yellow'    , label ='dynamical phase' )
+#axs[2,0].plot(t_values         , baselineplot              , color='black'  , label='baseline'         )
+#axs[2,0].plot(t_values         , fitting_function_array     ,'--'         , color='chartreuse'  , label='fit'         )
+
+
+#axs[2,0].plot(t_values         , true_berry_phase          , color='orange' , label='Berry'            )
 axs[2,0].legend(loc="best", prop={'size': 9})
 
 '''======================================================================'''
@@ -521,7 +582,7 @@ filename = 'omega=%.3f'%omega+'.png'
 plt.savefig(filename)
 plt.close()
 
-build.final_output(output_folder,x,steps_image*my.dt,psi,savepsi,my.output_choice,my.images,my.fixmaximum)
+#build.final_output(output_folder,x,steps_image*my.dt,psi,savepsi,my.output_choice,my.images,my.fixmaximum)
 
 end = time.clock()
 print('time taken to run the full program is ',end-start,' seconds')
