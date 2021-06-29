@@ -109,7 +109,7 @@ for j in range(steps_image+1):
 
     Average                      : return average of a list
 
-    triangle_function            : triangle function.
+    heaviside_periodic           : heaviside function.
 '''
 sigma_gaussian_width_log_dot = []
 normalisation_liste          = []
@@ -119,7 +119,7 @@ seconde_derivative_psi       = []
 mean_hamiltonian             = []
 new_t_values                 = []
 invariant_action             = []
-triangle_function            = my.triangle_function
+heaviside_periodic           = my.heaviside_periodic
 
 def Average(lst):
     return sum(lst) / len(lst)
@@ -168,8 +168,8 @@ for i in range(0,int(len(t_values))):
 
 for i in range(len(t_values)):
     new_t_values.append(t_values[i])
-    mean_hamiltonian.append( ((simps( -0.5*np.conj(psi_dictionnary[i])* seconde_derivative_psi[i]+ np.conj(psi_dictionnary[i])* ( triangle_function[i]*(x**2)/2.0 )* psi_dictionnary[i] , x , dx ))).real )
-    invariant_action.append(  ( (mean_hamiltonian[int(i)].real/np.sqrt( ( triangle_function[i] ) )).real ) )
+    mean_hamiltonian.append( ((simps( -0.5*np.conj(psi_dictionnary[i])* seconde_derivative_psi[i]+ np.conj(psi_dictionnary[i])* ( heaviside_periodic[i]*(x**2)/2.0 )* psi_dictionnary[i] , x , dx ))).real )
+    invariant_action.append(  ( (mean_hamiltonian[int(i)].real/np.sqrt( ( heaviside_periodic[i] ) )).real ) )
 
 
 
@@ -285,7 +285,7 @@ for i in range(len(t_values)):
     if i == 0 or i == int(len(t_values)-1):
         adiabatic_coefficient_eta.append(0)
     else:
-        adiabatic_coefficient_eta.append( ((np.sqrt( triangle_function[i-1] )-np.sqrt(triangle_function[i+1]))  /(2*dt))/(triangle_function[i])    )
+        adiabatic_coefficient_eta.append( ((np.sqrt( heaviside_periodic[i-1] )-np.sqrt(heaviside_periodic[i+1]))  /(2*dt))/(heaviside_periodic[i])    )
 
 
 '''=========================================================================='''
@@ -379,26 +379,29 @@ print(' ')
   _____________________________________
  | omega0 |  eta   |  phase  | time  s |
  |¯¯¯¯¯¯¯¯|¯¯¯¯¯¯¯¯|¯¯¯¯¯¯¯¯¯|¯¯¯¯¯¯¯¯¯|
- | 0.000  | 0.000  | -0.940  |  25.00  |
- | 0.250  | 0.079  | -17.54  |  99.96  |
- | 0.500  | 0.158  |  -8.78  |  43.86  |
- | 0.750  | 0.236  |  -5.84  |  27.69  |
- | 1.000  | 0.314  |  -4.37  |  22.00  |
- | 1.250  | 0.392  |  -3.49  |  16.77  |
- | 1.500  | 0.466  |  -2.94  |  13.90  |
- | 1.750  | 0.548  |  -2.50  |  10.77  |
- | 2.000  | 0.623  |  -2.17  |  10.17  |
- | 2.250  | 0.697  |  -1.90  |   7.32  |
+ | 0.000  | 0.000  | -1.620  |  25.00  | v
+ | 0.250  | 7.946  | -19.63  |  99.96  | v
+ | 0.500  | 7.946  | -9.877  |  43.86  | v
+ | 0.750  | 0.236  | -6.589  |  27.69  | v
+ | 1.000  | 7.946  | -4.917  |  22.00  | v
+ | 1.250  | 0.392  | -3.970  |  16.77  | v
+ | 1.500  | 0.466  | -3.248  |  13.90  | v
+ | 1.750  | 0.548  | -2.770  |  10.77  | v
+ | 2.000  | 0.623  | -2.518  |  10.17  | v
+ | 2.250  | 0.697  | -2.136  |   7.32  | v
  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 
 
 """
 
 '''=========================================================================='''
+'''
+    From the triangle
+'''
 
-
-omega0_point                  = [ 0     ,   0.079  ,  0.158   ,  0.236 ,  0.314 ,  0.392 ,  0.466 ,  0.548 ,  0.623 ,  0.697 ]
-phase_out_calculus            = [-0.940 , -17.54   , -8.78    , -5.84  , -4.37  , -3.49  , -2.94  , -2.50  , -2.17  , -1.90  ]
+#omega0_point                  = [ 0     ,   0.079  ,  0.158   ,  0.236 ,  0.314 ,  0.392 ,  0.466 ,  0.548 ,  0.623 ,  0.697 ]
+omega0_point                  = [ 0     ,   0.250  ,  0.500   ,  0.750 ,  1.000 ,  1.250 ,  1.500 ,  1.750 ,  2.000 ]
+phase_out_calculus            = [-0.940 , -17.54   , -8.78    , -5.84  , -4.37  , -3.49  , -2.94  , -2.50  , -2.17  ]
 phase_out_calculus_exp_angle  = []
 phase_out_calculus_exp_angle.append( np.angle(np.exp(1j*phase_out_calculus[0]) )+0.940 )
 for i in range(1,len(phase_out_calculus)):
@@ -421,7 +424,8 @@ for i in range(1,len(phase_out_calculus)):
 '''
     From the cosinus
 '''
-omega0_point1                  = [ 0     ,   0.061  ,  0.121   ,  0.182 ,  0.242 ,  0.303 ,  0.363 ,  0.424 ,  0.484 ]
+#omega0_point1                  = [ 0     ,   0.061  ,  0.121   ,  0.182 ,  0.242 ,  0.303 ,  0.363 ,  0.424 ,  0.484 ]
+omega0_point1                  = [ 0     ,   0.250  ,  0.500   ,  0.750 ,  1.000 ,  1.250 ,  1.500 ,  1.750 ,  2.000 ]
 phase_out_calculus1            = [-1.563 , -17.088  , -8.217   , -5.453 , -4.126 , -3.448 , -2.611 , -2.060 , -2.011 ]
 phase_out_calculus_exp_angle1  = []
 phase_out_calculus_exp_angle1.append( np.angle(np.exp(1j*phase_out_calculus1[0]) )+1.563 )
@@ -430,6 +434,22 @@ for i in range(1,len(phase_out_calculus1)):
     while phase_out_calculus_exp_angle1[i]>phase_out_calculus_exp_angle1[i-1]:
         phase_out_calculus_exp_angle1[i]=phase_out_calculus_exp_angle1[i]-2*np.pi
 '''=========================================================================='''
+
+'''
+    From the heaviside
+'''
+#omega0_point2                  = [ 0     ,   0.061  ,  0.121   ,  0.182 ,  0.242 ,  0.303 ,  0.363 ,  0.424 ,  0.484 ]
+omega0_point2                  = [ 0     ,   0.250 ,  0.500   ,  0.750 ,  1.000 ,  1.250 ,  1.500 ,  1.750 ,  2.000 ]
+phase_out_calculus2            = [-1.620 , -19.63  , -9.877   , -6.589 , -4.917 , -3.970 , -3.248 , -2.770 , -2.518 ]
+phase_out_calculus_exp_angle2  = []
+phase_out_calculus_exp_angle2.append( np.angle(np.exp(1j*phase_out_calculus2[0]) )+1.620 )
+for i in range(1,len(phase_out_calculus2)):
+    phase_out_calculus_exp_angle2.append( np.angle(np.exp(1j*phase_out_calculus2[i]) )+1.620 )
+    while phase_out_calculus_exp_angle2[i]>phase_out_calculus_exp_angle2[i-1]:
+        phase_out_calculus_exp_angle2[i]=phase_out_calculus_exp_angle2[i]-2*np.pi
+'''=========================================================================='''
+
+
 
 plt.rcParams["figure.figsize"] = (13,13)             #size of the output picture
 
@@ -461,7 +481,7 @@ f_ax1.set_ylabel(' ')
 f_ax1.set_xlabel('time $t$ in s')
 f_ax1.plot(new_t_values , mean_hamiltonian                            , color='aquamarine' , label = '<$H$>'     )
 #f_ax1.plot(t_values     , [np.sqrt(2+np.cos(omega*w)) for w in t_values] , color='blue'       , label = 'potential' )
-f_ax1.plot(t_values     , triangle_function , color='green'       , label = 'triangle' )
+f_ax1.plot(t_values     , heaviside_periodic , color='green'       , label = 'heaviside' )
 f_ax1.legend(loc="upper right", prop={'size': 9})
 
 '''======================================================================'''
@@ -477,11 +497,12 @@ f_ax1.legend(loc="upper right", prop={'size': 9})
 
 axs[1,0].set_title('Berry phase after one period')
 axs[1,0].set_ylabel('Radians')
-axs[1,0].set_xlabel('Adiabatic coefficient $\eta$')
+axs[1,0].set_xlabel('Frequency $\omega_0$')
 for i in range(8):
     axs[1,0].hlines(y=-i*2*np.pi, xmin = min(omega0_point), xmax=max(omega0_point) )
-axs[1,0].scatter(omega0_point  , phase_out_calculus_exp_angle  , color = 'red'   , label = 'triangle')
-axs[1,0].scatter(omega0_point1 , phase_out_calculus_exp_angle1 , color = 'green' , label = "cosinus" )
+axs[1,0].scatter(omega0_point  , phase_out_calculus_exp_angle  , color = 'red'   , label = 'triangle'  )
+axs[1,0].scatter(omega0_point1 , phase_out_calculus_exp_angle1 , color = 'green' , label = "cosinus"   )
+axs[1,0].scatter(omega0_point2 , phase_out_calculus_exp_angle2 , color = 'blue'  , label = "heaviside" )
 axs[1,0].legend(loc="best", prop={'size': 9})
 
 

@@ -47,21 +47,22 @@ fixmaximum    = 0
 #steps_image   = int(tmax/dt/images )
 steps_image   = int(tmax/dt)
 t_values      = []
-triangle_function  = []
 
-#for j in range(steps_image*images+1):
 for j in range(steps_image+1):
     t_values.append(j*dt)
+"""
+heaviside_periodic = []
+length_split = tmax/(2*ntp)
+for j in range(len(t_values)):
+	while j*dt <length_split:
+		heaviside_periodic.append(0)
+	else:
+		heaviside_periodic.append(1)
 
-
-
-for i in range(len(t_values)):
-    triangle_function.append(2+signal.sawtooth(t_values[i]*omega, 0.5))
-
-#triangle_function = 2+signal.sawtooth(t_values*omega, 0.5)
-
-#plt.plot(t_values ,[signal.sawtooth(w*omega, 0.5) for w in t_values] )
-#plt.show()
+"""
+heaviside_periodic = []
+for j in range(len(t_values)):
+	heaviside_periodic.append(2+np.heaviside( np.cos(omega*t_values[j]), 1))
 
 
 def psi_0(x,y):
@@ -71,6 +72,5 @@ def psi_0(x,y):
 	return f;
 
 def V(x,y,t,psi,omega):
-	#V = triangle_function[int(t/dt)]*(x**2)/2.0
-	V = triangle_function[t_values.index(t)]*(x**2)/2.0
+	V = heaviside_periodic[t_values.index(t)]*(x**2)/2.0
 	return V;
